@@ -1,0 +1,3347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lumenic — Editor de Mapas para Mestres</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#130f09; --panel:#1d160c; --panel-2:#261c10; --border:#453421;
+    --gold:#c9932f; --gold-dim:#8a6a2e; --red:#8a2f22; --teal:#3f6a5a;
+    --parchment:#e9dcb8; --ink:#eee2c2; --ink-dim:#a3906a;
+    --display:'Cinzel',serif; --ui:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:
+      radial-gradient(ellipse at 15% -10%, rgba(201,147,47,0.08), transparent 40%),
+      radial-gradient(ellipse at 100% 110%, rgba(63,106,90,0.08), transparent 45%),
+      var(--bg);
+    color:var(--ink);font-family:var(--ui);min-height:100vh;}
+  .wrap{max-width:1400px;margin:0 auto;padding:22px 20px 50px;}
+  a{color:var(--gold);}
+  button{font-family:var(--ui);}
+  input,select,textarea{font-family:var(--ui);}
+  ::-webkit-scrollbar{width:10px;height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);}
+  ::-webkit-scrollbar-track{background:var(--panel);}
+
+  /* ---------- header ---------- */
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:20px;gap:16px;flex-wrap:wrap;}
+  .eyebrow{font-family:var(--display);font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+  h1{font-family:var(--display);font-weight:700;font-size:30px;margin:0;letter-spacing:.5px;color:var(--parchment);text-shadow:0 0 18px rgba(201,147,47,0.45),0 0 40px rgba(201,147,47,0.15);}
+  header.top p{margin:4px 0 0;color:var(--ink-dim);font-size:12.5px;}
+  .authorbox{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink-dim);}
+  .authorbox input{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:6px 9px;font-size:12px;width:150px;}
+
+  /* ---------- buttons ---------- */
+  .btn{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:8px 14px;cursor:pointer;font-size:12px;letter-spacing:.3px;}
+  .btn:hover{border-color:var(--gold);color:var(--gold);}
+  .btn.primary{border-color:var(--gold-dim);background:rgba(201,147,47,.12);color:var(--gold);}
+  .btn.primary:hover{background:rgba(201,147,47,.22);}
+  .btn.danger{color:var(--ink-dim);}
+  .btn.danger:hover{border-color:var(--red);color:#e0685a;}
+  .btn.small{padding:5px 9px;font-size:11px;}
+  .btn:disabled{opacity:.4;cursor:default;}
+
+  /* ---------- gallery ---------- */
+  #screenGallery .newmap{background:var(--panel);border:1px solid var(--border);padding:16px;margin-bottom:24px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;}
+  #screenGallery .newmap .field{display:flex;flex-direction:column;gap:5px;}
+  #screenGallery .newmap label{font-size:10.5px;color:var(--ink-dim);letter-spacing:.5px;text-transform:uppercase;}
+  #screenGallery .newmap input[type=text]{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:8px 10px;font-size:13px;min-width:220px;}
+  #screenGallery .newmap select{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:8px 10px;font-size:13px;}
+  .gallery-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .gallery-head h2{font-family:var(--display);font-size:14px;letter-spacing:1.5px;color:var(--ink-dim);text-transform:uppercase;margin:0;}
+  .grid-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+  .card{background:var(--panel);border:1px solid var(--border);padding:14px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;}
+  .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--gold),transparent);}
+  .card .badge{display:inline-flex;align-self:flex-start;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--border);padding:2px 7px;color:var(--ink-dim);}
+  .card .badge.hex{color:var(--teal);border-color:var(--teal);}
+  .card .badge.square{color:var(--gold);border-color:var(--gold-dim);}
+  .card h3{font-family:var(--display);font-size:16px;margin:0;color:var(--parchment);}
+  .card .meta{font-size:11px;color:var(--ink-dim);}
+  .card .actions{display:flex;gap:8px;margin-top:4px;}
+  .empty-state{border:1px dashed var(--border);padding:30px;text-align:center;color:var(--ink-dim);font-size:12.5px;}
+
+  /* ---------- editor screen ---------- */
+  #screenEditor{display:none;}
+  .editor-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:14px;}
+  .editor-top .left{display:flex;align-items:center;gap:10px;}
+  #mapNameInput{background:transparent;border:none;border-bottom:1px dashed var(--border);color:var(--parchment);font-family:var(--display);font-size:19px;padding:2px 2px;min-width:160px;}
+  #mapNameInput:focus{outline:none;border-color:var(--gold);}
+  .save-status{font-size:10.5px;color:var(--ink-dim);}
+  .mode-toggle{display:flex;border:1px solid var(--border);}
+  .mode-toggle button{background:var(--panel-2);border:none;color:var(--ink-dim);padding:7px 12px;font-size:11px;cursor:pointer;letter-spacing:.5px;}
+  .mode-toggle button.active{background:rgba(201,147,47,.18);color:var(--gold);}
+
+  .layout{display:grid;grid-template-columns:220px 1fr 270px;gap:14px;align-items:start;}
+  @media (max-width:1080px){.layout{grid-template-columns:1fr;} .panel{position:static !important;max-height:none !important;}}
+  .panel{background:var(--panel);border:1px solid var(--border);padding:13px;position:sticky;top:14px;max-height:calc(100vh - 28px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--gold-dim) var(--panel-2);}
+  .panel::-webkit-scrollbar{width:7px;}
+  .panel::-webkit-scrollbar-track{background:var(--panel-2);}
+  .panel::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:4px;}
+  .group-label{font-family:var(--display);font-size:10px;letter-spacing:1.6px;color:var(--gold);text-transform:uppercase;margin:10px 0 6px;padding-bottom:3px;border-bottom:1px solid var(--border);}
+  .group-label:first-child{margin-top:0;}
+  .tool-btn{display:flex;justify-content:space-between;align-items:center;gap:6px;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:6px 9px;margin-bottom:4px;cursor:pointer;font-size:11.5px;}
+  .tool-btn:hover{background:#2f2313;}
+  .tool-btn.active{border-color:var(--gold);background:rgba(201,147,47,.12);color:var(--gold);}
+  .swatch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px;}
+  .swatch-btn{height:26px;border:2px solid var(--border);cursor:pointer;position:relative;}
+  .swatch-btn.active{border-color:var(--parchment);box-shadow:0 0 0 1px var(--gold);}
+  .custom-color-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:10.5px;color:var(--ink-dim);}
+  .custom-color-row input[type=color]{width:34px;height:24px;border:1px solid var(--border);background:none;padding:0;}
+  #toolInfo{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:10.5px;line-height:1.5;color:var(--ink-dim);}
+  #toolInfo b{color:var(--ink);}
+  .util-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--ink-dim);padding:7px 9px;margin-bottom:5px;cursor:pointer;font-size:10.5px;}
+  .util-btn:hover{border-color:var(--gold);color:var(--gold);}
+  .util-btn.danger:hover{border-color:var(--red);color:#e0685a;}
+
+  .board{padding:10px;}
+  .board-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:8px;}
+  .floor-tabs{display:flex;gap:5px;flex-wrap:wrap;}
+  .floor-tab{background:var(--panel-2);border:1px solid var(--border);color:var(--ink-dim);padding:6px 10px;font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+  .floor-tab.active{border-color:var(--gold);color:var(--gold);background:rgba(201,147,47,.12);}
+  .floor-tab .x{color:var(--red);opacity:.6;}
+  .floor-tab .x:hover{opacity:1;}
+  .floor-tab.add{color:var(--ink-dim);border-style:dashed;}
+  .btn-group{display:flex;align-items:center;gap:5px;}
+  .btn-group button{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);min-width:26px;height:26px;cursor:pointer;font-size:11px;padding:0 6px;}
+  .btn-group span{font-size:10.5px;color:var(--ink-dim);min-width:44px;text-align:center;}
+  .board-scroll{max-height:640px;overflow:auto;border:1px solid var(--border);background:#0f0b06;}
+  /* Minecraft-style inventory panel shown to players when their token is near an open,
+     unlocked chest — sits fixed over the board so it never depends on zoom/scroll math. */
+  .chest-inv-panel{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:20;
+    display:none;background:var(--panel);border:2px solid var(--gold-dim);box-shadow:0 6px 24px rgba(0,0,0,0.55);
+    padding:10px 12px;max-width:92%;}
+  .chest-inv-title{font-family:var(--display);color:var(--gold);font-size:12.5px;letter-spacing:1px;margin-bottom:8px;text-align:center;}
+  .chest-inv-grid{display:flex;flex-wrap:wrap;gap:6px;max-width:420px;justify-content:center;}
+  .chest-inv-slot{width:56px;display:flex;flex-direction:column;align-items:center;}
+  .chest-inv-icon{width:44px;height:44px;background:var(--panel-2);border:1px solid var(--border);
+    background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;
+    font-size:20px;position:relative;}
+  .chest-inv-qty{margin-top:-16px;align-self:flex-end;background:#0f0b06;color:var(--parchment);font-size:10px;
+    padding:0 3px;border-radius:2px;}
+  .chest-inv-name{font-size:9.5px;color:var(--ink-dim);text-align:center;margin-top:2px;line-height:1.15;
+    max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  svg{display:block;cursor:crosshair;user-select:none;transform-origin:top left;}
+  .obj-icon{cursor:grab;}
+  [data-role="edgehit"]{cursor:pointer;}
+  #content.edge-hover-active [data-role="edgehit"]:hover{fill:rgba(201,147,47,0.38) !important;}
+
+  #inspector label{display:block;font-size:10.5px;color:var(--ink-dim);margin-bottom:9px;}
+  #inspector input[type=file]{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink-dim);padding:5px;margin-top:3px;font-size:10px;}
+  #inspector input[type=text]{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:6px 7px;margin-top:3px;font-size:11.5px;}
+  #inspector input[type=color]{width:100%;height:26px;margin-top:3px;background:var(--panel-2);border:1px solid var(--border);padding:2px;}
+  #inspector input[type=range]{width:100%;margin-top:3px;}
+  #inspector input[type=checkbox]{accent-color:var(--gold);margin-right:6px;}
+  .insp-type{font-family:var(--display);font-size:12.5px;color:var(--gold);letter-spacing:.5px;margin-bottom:8px;}
+  .muted{color:var(--ink-dim);font-size:10.5px;}
+  .legend-row{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--ink-dim);margin-bottom:4px;}
+  .swatch{width:14px;height:14px;flex:none;border:1px solid var(--border);}
+  .legend-line{width:16px;height:0;border-top:3px solid;flex:none;}
+  #notesArea{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:8px;font-size:11.5px;min-height:90px;resize:vertical;font-family:var(--ui);}
+
+  footer{margin-top:24px;padding-top:14px;border-top:1px solid var(--border);color:var(--ink-dim);font-size:10.5px;text-align:center;}  /* ---- guided tutorial ---- */
+  #coachOverlay{position:fixed;inset:0;z-index:900;display:none;}
+  #coachOverlay.active{display:block;}
+  .coach-spot{position:fixed;border:2px solid var(--gold);border-radius:8px;box-shadow:0 0 0 9999px rgba(6,4,2,0.78);pointer-events:none;transition:top .18s ease,left .18s ease,width .18s ease,height .18s ease;}
+  .coach-card{position:fixed;max-width:280px;background:var(--panel);border:1px solid var(--gold-dim);border-radius:10px;padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,0.5);z-index:902;transition:top .18s ease,left .18s ease;}
+  .coach-card::before{content:'';position:absolute;width:12px;height:12px;background:var(--panel);border:1px solid var(--gold-dim);transform:rotate(45deg);}
+  .coach-card.arrow-top::before{top:-7px;left:24px;border-right:none;border-bottom:none;}
+  .coach-card.arrow-bottom::before{bottom:-7px;left:24px;border-left:none;border-top:none;}
+  .coach-card.arrow-left::before{left:-7px;top:20px;border-right:none;border-top:none;}
+  .coach-card.arrow-right::before{right:-7px;top:20px;border-left:none;border-bottom:none;}
+  .coach-step-count{font-family:var(--display);font-size:10px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase;margin-bottom:6px;}
+  .coach-title{font-weight:700;font-size:14px;color:var(--parchment);margin-bottom:6px;}
+  .coach-text{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin-bottom:10px;}
+  .coach-dontshow{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-dim);margin-bottom:10px;}
+  .coach-dontshow input{accent-color:var(--gold);}
+  .coach-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .coach-actions .btn{padding:5px 11px;font-size:11.5px;}
+  .coach-skip{background:none;border:none;color:var(--ink-dim);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:4px;}
+  .coach-skip:hover{color:var(--parchment);}
+  #btnHelp{border-radius:50%;width:30px;height:30px;padding:0;font-size:14px;}
+  /* ---- dice tray ---- */
+  #btnDiceToggle{position:fixed;right:22px;bottom:22px;z-index:400;width:52px;height:52px;border-radius:50%;font-size:22px;padding:0;box-shadow:0 6px 18px rgba(0,0,0,0.45);}
+  #btnInitToggle{position:fixed;right:84px;bottom:22px;z-index:400;width:52px;height:52px;border-radius:50%;font-size:22px;padding:0;box-shadow:0 6px 18px rgba(0,0,0,0.45);}
+  #initTray{position:fixed;right:84px;bottom:84px;z-index:400;width:250px;max-height:60vh;overflow-y:auto;background:var(--panel);border:1px solid var(--gold-dim);border-radius:10px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;flex-direction:column;gap:8px;}
+  #initTray.active{display:flex;}
+  .init-row{display:flex;align-items:center;gap:6px;padding:5px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;}
+  .init-row.current-turn{border-color:var(--gold);background:rgba(201,147,47,0.12);}
+  .init-row .init-val{width:32px;text-align:center;font-weight:600;color:var(--gold);}
+  .init-row .init-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #diceTray{position:fixed;right:22px;bottom:84px;z-index:400;width:270px;max-height:60vh;background:var(--panel);border:1px solid var(--gold-dim);border-radius:10px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);display:none;flex-direction:column;gap:8px;}
+  #diceTray.active{display:flex;}
+  .dice-tray-head{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-size:11px;letter-spacing:1.6px;color:var(--gold);text-transform:uppercase;}
+  .dice-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+  .dice-die{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:6px 2px;text-align:center;}
+  .dice-die .die-name{font-size:11px;color:var(--ink-dim);margin-bottom:3px;}
+  .dice-die input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--ink);text-align:center;padding:3px 0;font-size:12px;box-sizing:border-box;}
+  .dice-bonus-row{display:flex;align-items:center;gap:8px;}
+  .dice-bonus-row label{flex:1;font-size:11px;color:var(--ink-dim);display:flex;flex-direction:column;gap:3px;}
+  .dice-bonus-row input{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px 7px;font-size:12px;}
+  .dice-roller-row{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--ink-dim);}
+  .dice-roller-row select{background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px 7px;font-size:12px;}
+  .roll-crit{color:#5fd97a;font-weight:700;}
+  .roll-fumble{color:#e0574a;font-weight:700;}
+  .dice-log{border-top:1px solid var(--border);padding-top:8px;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;scrollbar-width:thin;}
+  .dice-log-entry{font-size:11px;color:var(--ink-dim);border-left:2px solid var(--gold-dim);padding-left:7px;}
+  .dice-log-entry .roll-total{color:var(--gold);font-weight:700;font-size:13px;}
+  .dice-log-entry .roll-who{color:var(--parchment);font-weight:600;}
+  .dice-log-empty{font-size:11px;color:var(--ink-dim);text-align:center;padding:6px 0;}
+  /* ---- generic modal (password prompts, etc.) ---- */
+  .modal-overlay{position:fixed;inset:0;z-index:950;display:none;align-items:center;justify-content:center;background:rgba(6,4,2,0.72);}
+  .modal-overlay.active{display:flex;}
+  .modal-box{background:var(--panel);border:1px solid var(--gold-dim);border-radius:10px;padding:20px;width:320px;max-width:90vw;box-shadow:0 10px 34px rgba(0,0,0,0.5);}
+  .modal-title{font-weight:700;font-size:15px;color:var(--parchment);margin-bottom:8px;}
+  .modal-text{font-size:12.5px;color:var(--ink-dim);line-height:1.5;margin-bottom:12px;}
+  .modal-box input{width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:8px 10px;font-size:13px;box-sizing:border-box;}
+  .modal-input-row{display:flex;gap:6px;margin-bottom:14px;}
+  .modal-input-row input{margin-bottom:0;flex:1;}
+  .modal-input-row .btn{padding:6px 10px;}
+  .modal-actions{display:flex;align-items:center;gap:8px;}
+</style>
+</head>
+<body>
+<div id="coachOverlay">
+  <div class="coach-spot" id="coachSpot" style="display:none;"></div>
+  <div class="coach-card" id="coachCard">
+    <div class="coach-step-count" id="coachStepCount"></div>
+    <div class="coach-title" id="coachTitle"></div>
+    <div class="coach-text" id="coachText"></div>
+    <label class="coach-dontshow"><input type="checkbox" id="coachDontShow"> Não mostrar este tutorial novamente</label>
+    <div class="coach-actions">
+      <button class="coach-skip" id="coachSkip">Pular tudo</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn small" id="coachPrev">‹ Voltar</button>
+        <button class="btn primary small" id="coachNext">Próximo ›</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="genModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-title" id="genModalTitle"></div>
+    <div class="modal-text" id="genModalText"></div>
+    <div class="modal-input-row">
+      <input id="genModalInput" type="password" autocomplete="off">
+      <button class="btn small" id="genModalEye" type="button" title="Mostrar/ocultar">👁</button>
+    </div>
+    <div class="modal-actions">
+      <button class="coach-skip" id="genModalRemove" style="display:none;">Remover senha</button>
+      <div style="flex:1;"></div>
+      <button class="btn small" id="genModalCancel">Cancelar</button>
+      <button class="btn primary small" id="genModalConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+
+  <!-- ============ GALLERY ============ -->
+  <div id="screenGallery">
+    <header class="top">
+      <div>
+        <div class="eyebrow">✦ Lumen guia o caminho ✦</div>
+        <h1>Lumenic</h1>
+        <p>Uma luz para os mestres em suas jornadas. Crie masmorras e mundos, com névoa de guerra, tokens e múltiplos andares — os mapas ficam salvos e visíveis para todos que acessarem esta ferramenta.</p>
+      </div>
+      <div class="authorbox">
+        Assinar mapas como:
+        <input id="authorInput" type="text" placeholder="seu nome">
+      </div>
+    </header>
+
+    <div class="newmap">
+      <div class="field">
+        <label>Nome do mapa</label>
+        <input type="text" id="newMapName" placeholder="Ex: Cripta Esquecida">
+      </div>
+      <div class="field">
+        <label>Tipo de grid</label>
+        <select id="newMapType">
+          <option value="square">Masmorra (grid quadrado)</option>
+          <option value="hex">Mundo / região (hexágonos)</option>
+        </select>
+      </div>
+      <button class="btn primary" id="btnCreateMap">+ Criar Mapa</button>
+      <button class="btn" id="btnRefreshGallery">↻ Atualizar lista</button>
+    </div>
+
+    <div class="gallery-head"><h2>Mapas salvos</h2></div>
+    <div id="galleryList" class="grid-cards"></div>
+    <footer>✦ Lumenic — dados de mapa são compartilhados: qualquer pessoa com acesso a esta ferramenta pode ver, editar ou apagar os mapas listados aqui.</footer>
+  </div>
+
+  <!-- ============ EDITOR ============ -->
+  <div id="screenEditor">
+    <div class="editor-top">
+      <div class="left">
+        <button class="btn small" id="btnBack">‹ Mapas</button>
+        <input type="text" id="mapNameInput">
+        <span class="save-status" id="saveStatus"></span>
+        <button class="btn small" id="btnPassword" title="Proteger mapa com senha">🔓</button>
+        <button class="btn small" id="btnVisibility" title="Alternar mapa entre público e privado">🌐 Público</button>
+        <button class="btn small" id="btnInvite" title="Copiar link direto deste mapa para convidar alguém">🔗 Convidar</button>
+        <button class="btn small" id="btnHelp" title="Rever o tutorial">?</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <input type="text" id="playerNameInput" placeholder="Seu nome (jogador)" title="Seu nome — usado pra saber quais tokens são seus. Fica só neste navegador." style="background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:6px 9px;font-size:12px;width:140px;">
+        <div class="mode-toggle">
+          <button id="modeGM" class="active">🕯 Mestre</button>
+          <button id="modePlayer">👁 Jogador</button>
+        </div>
+        <button class="btn danger small" id="btnDeleteMap">Excluir mapa</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="group-label" id="terrainLabel">Terreno</div>
+        <div class="swatch-grid" id="terrainSwatches"></div>
+        <div class="custom-color-row">
+          <input type="color" id="customColor">
+          <span>cor personalizada</span>
+        </div>
+        <button class="tool-btn" data-tool="erase"><span>Apagar</span></button>
+        <button class="tool-btn" data-tool="fill-area"><span>Preencher Área (retângulo)</span></button>
+        <button class="tool-btn" data-tool="erase-area"><span>Apagar Área (retângulo)</span></button>
+
+        <div class="group-label" id="structureGroup">Estrutura</div>
+        <button class="tool-btn" data-tool="wall"><span>Parede</span></button>
+        <button class="tool-btn" data-tool="door"><span>Porta</span></button>
+        <div class="custom-color-row" id="edgeColorRow" style="display:none;">
+          <input type="color" id="edgeColorPicker">
+          <span id="edgeColorLabel">cor da parede</span>
+        </div>
+
+        <div class="group-label">Névoa de Guerra</div>
+        <button class="tool-btn" data-tool="fog-on"><span>Ocultar área</span></button>
+        <button class="tool-btn" data-tool="fog-off"><span>Revelar área</span></button>
+        <button class="util-btn" id="btnFogAll" style="margin-top:6px;">Cobrir andar inteiro</button>
+        <button class="util-btn" id="btnFogNone">Revelar andar inteiro</button>
+
+        <div class="group-label">Tokens</div>
+        <button class="tool-btn" data-tool="token-player"><span>Token Jogador</span></button>
+        <button class="tool-btn" data-tool="token-monster"><span>Token Monstro/NPC</span></button>
+
+        <div class="group-label">Passagens entre Andares</div>
+        <button class="tool-btn" data-tool="connector"><span>🪜 Escada / Elevador</span></button>
+
+        <div class="group-label">Objetos de Cenário</div>
+        <button class="tool-btn" data-tool="prop"><span>📦 Objeto de Cenário</span></button>
+        <div id="propOptions" style="display:none;">
+          <div class="swatch-grid" id="propKindGrid" style="grid-template-columns:repeat(4,1fr);"></div>
+        </div>
+        <button class="tool-btn" data-tool="light"><span>💡 Objeto Luminoso</span></button>
+
+        <div id="worldToolsGroup">
+        <div class="group-label">Mundo e Região</div>
+        <button class="tool-btn" data-tool="vegetation"><span>🌿 Pincel de Vegetação</span></button>
+        <div id="vegOptions" style="display:none;">
+          <div class="swatch-grid" id="vegKindGrid" style="grid-template-columns:repeat(4,1fr);"></div>
+          <label style="display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--ink-dim);margin-top:8px;">Densidade
+            <input type="range" id="vegDensity" min="1" max="10" value="5">
+          </label>
+        </div>
+        <button class="tool-btn" data-tool="path"><span>🛣️ Estrada / Rio</span></button>
+        <div id="pathOptions" style="display:none;">
+          <div class="btn-group" style="margin-bottom:8px;">
+            <button class="tool-btn" data-pathkind="road" style="margin-bottom:0;"><span>Estrada</span></button>
+            <button class="tool-btn" data-pathkind="river" style="margin-bottom:0;"><span>Rio</span></button>
+          </div>
+          <div class="custom-color-row">
+            <input type="color" id="pathColorPicker">
+            <span>cor</span>
+          </div>
+          <label style="display:flex;flex-direction:column;gap:3px;font-size:10.5px;color:var(--ink-dim);margin:8px 0;">Largura
+            <input type="range" id="pathWidth" min="4" max="30" value="12">
+          </label>
+          <button class="btn small primary" id="btnPathFinish" style="width:100%;">Finalizar caminho</button>
+          <p class="muted" style="margin-top:6px;">Clique vários pontos para desenhar o caminho. Clique duas vezes ou aperte aqui para terminar.</p>
+        </div>
+        </div>
+
+        <div class="group-label">Anotações</div>
+        <button class="tool-btn" data-tool="label"><span>Rótulo de texto</span></button>
+
+        <div class="group-label">Medição</div>
+        <button class="tool-btn" data-tool="ruler"><span>Régua</span></button>
+        <button class="tool-btn" data-tool="ping"><span>Apontar 📍</span></button>
+        <button class="tool-btn" data-tool="template"><span>Forma de Área (magias)</span></button>
+        <div id="templateOptions" style="display:none;">
+          <div class="swatch-grid" id="templateShapeGrid" style="grid-template-columns:repeat(3,1fr);">
+            <button class="tool-btn" data-shape="circle" style="margin-bottom:0;"><span>Círculo</span></button>
+            <button class="tool-btn" data-shape="cone" style="margin-bottom:0;"><span>Cone</span></button>
+            <button class="tool-btn" data-shape="rect" style="margin-bottom:0;"><span>Retângulo</span></button>
+            <button class="tool-btn" data-shape="square" style="margin-bottom:0;"><span>Quadrado</span></button>
+            <button class="tool-btn" data-shape="triangle" style="margin-bottom:0;"><span>Triângulo</span></button>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--ink-dim);margin:8px 0;">
+            <input type="checkbox" id="templateFilledToggle" checked> Com preenchimento
+          </label>
+          <div class="custom-color-row">
+            <input type="color" id="templateColorPicker">
+            <span>cor da forma</span>
+          </div>
+        </div>
+
+        <div class="group-label">Edição</div>
+        <button class="tool-btn active" data-tool="select"><span>Selecionar / Mover</span></button>
+
+        <div id="toolInfo"></div>
+
+        <div class="group-label">Ações</div>
+        <button class="util-btn" id="btnExample">Carregar exemplo</button>
+        <button class="util-btn danger" id="btnClearFloor">Limpar andar atual</button>
+      </aside>
+
+      <main class="panel board">
+        <div class="board-toolbar">
+          <div class="floor-tabs" id="floorTabs"></div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;">
+            <div class="btn-group">
+              <button id="rowsMinus">−</button><span id="rowsLabel">Linhas</span><button id="rowsPlus">+</button>
+              <button id="colsMinus">−</button><span id="colsLabel">Colunas</span><button id="colsPlus">+</button>
+            </div>
+            <div class="btn-group">
+              <button id="zoomOut">−</button><span id="zoomLabel">100%</span><button id="zoomIn">+</button>
+            </div>
+          </div>
+        </div>
+        <div class="board-scroll">
+          <svg id="grid" xmlns="http://www.w3.org/2000/svg">
+            <g id="content"></g>
+          </svg>
+        </div>
+        <div id="chestInventoryPanel" class="chest-inv-panel"></div>
+      </main>
+
+      <aside class="panel">
+        <div class="group-label">Inspecionar Seleção</div>
+        <div id="inspector"><p class="muted">Nada selecionado. Use "Selecionar" e clique em algo no mapa.</p></div>
+
+        <div class="group-label">Notas do Mestre (este andar)</div>
+        <textarea id="notesArea" placeholder="Anotações privadas de condução, ganchos de história, armadilhas escondidas..."></textarea>
+
+        <div class="group-label">Legenda</div>
+        <div id="legendBody"></div>
+      </aside>
+    </div>
+
+    <button class="btn primary" id="btnDiceToggle" title="Dados">🎲</button>
+    <div id="diceTray">
+      <div class="dice-tray-head">
+        <span>Dados</span>
+        <button class="coach-skip" id="btnDiceClear">Zerar</button>
+      </div>
+      <label class="dice-roller-row">Rolando como
+        <select id="diceRoller"></select>
+      </label>
+      <div class="dice-grid" id="diceGrid"></div>
+      <div class="dice-bonus-row">
+        <label>Bônus <input type="text" id="diceBonus" value="0"></label>
+        <button class="btn primary small" id="btnDiceRoll">Rolar</button>
+      </div>
+      <div class="dice-log" id="diceLog"></div>
+    </div>
+
+    <button class="btn primary" id="btnInitToggle" title="Iniciativa">⚔️</button>
+    <div id="initTray">
+      <div class="dice-tray-head">
+        <span>Iniciativa — Rodada <span id="initRoundNum">1</span></span>
+        <button class="coach-skip" id="btnInitClear">Zerar</button>
+      </div>
+      <div id="initList"></div>
+      <div class="dice-bonus-row">
+        <input type="text" id="initNewName" placeholder="Nome" style="flex:1;">
+        <input type="text" id="initNewValue" placeholder="Iniciativa" style="width:70px;">
+        <button class="btn small" id="btnInitAdd" type="button">+</button>
+      </div>
+      <button class="btn primary small" id="btnInitNext" style="width:100%;">Próximo ▸</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  // ================= constants =================
+  const CELL = 34;
+  const HEX_SIZE = 28;
+  const EDGE_T = 20;
+  const TERRAINS = [
+    {name:'Grama', color:'#4a6b3a'},
+    {name:'Floresta', color:'#2c4527'},
+    {name:'Água', color:'#2c5670'},
+    {name:'Pedra', color:'#5c5850'},
+    {name:'Areia', color:'#b09b62'},
+    {name:'Neve', color:'#cfd6d6'},
+    {name:'Lava', color:'#7a2a1c'},
+    {name:'Madeira', color:'#6b4a2c'}
+  ];
+  const TOOL_INFO = {
+    'floor':'Clique e arraste para pintar terreno com a cor selecionada acima.',
+    'erase':'Clique e arraste para apagar terreno de uma área.',
+    'fill-area':'Clique, arraste até o canto oposto e solte para preencher um retângulo inteiro com a cor selecionada.',
+    'erase-area':'Clique, arraste até o canto oposto e solte para apagar um retângulo inteiro de uma vez — limpa o terreno e a névoa daquela área.',
+    'wall':'Clique numa borda entre células (ou externa) para alternar uma parede.',
+    'door':'Clique numa borda para alternar uma porta ali.',
+    'fog-on':'Clique e arraste para cobrir uma área com névoa de guerra.',
+    'fog-off':'Clique e arraste para revelar uma área coberta por névoa.',
+    'token-player':'Clique em qualquer ponto do mapa para soltar um token de jogador.',
+    'token-monster':'Clique em qualquer ponto do mapa para soltar um token de monstro/NPC.',
+    'connector':'Clique para colocar uma escada/elevador. Depois selecione-a para escolher o andar de destino. Ao arrastar um token para cima dela, o jogo pergunta se quer levá-lo para o outro andar.',
+    'prop':'Escolha o objeto abaixo e clique no mapa para colocá-lo. Selecione depois para mudar tamanho, cor, imagem própria, ou ligar "obstáculo" para bloquear tokens.',
+    'light':'Clique para colocar uma fonte de luz — ela revela a névoa ao redor sozinha, igual à visão de um token, mas fica parada no lugar. Selecione depois para ajustar cor e alcance.',
+    'vegetation':'Escolha o tipo abaixo, arraste um retângulo no mapa e solte — espalha vários de uma vez, com posições e tamanhos levemente aleatórios pra ficar mais orgânico. Ajuste a densidade no controle deslizante.',
+    'path':'Escolha Estrada ou Rio, clique vários pontos seguindo o caminho, e clique em "Finalizar caminho" (ou duas vezes no mapa) quando terminar.',
+    'label':'Clique em qualquer ponto para escrever um rótulo de texto.',
+    'select':'Clique para selecionar terreno, bordas, tokens ou rótulos. Arraste tokens/rótulos destravados para movê-los (eles se ajustam ao centro da célula ou do bloco, se forem grandes) — enquanto arrasta um token aparece uma régua mostrando a distância. Shift+clique em vários objetos para selecionar e mover em grupo.',
+    'ruler':'Clique em qualquer ponto e arraste até o outro ponto para medir a distância — origem e destino se ajustam ao centro da célula. A régua some ao soltar.',
+    'ping':'Clique em qualquer ponto do mapa para chamar atenção pra ele — um anel pulsante aparece ali por um instante pra todo mundo que estiver com o mapa aberto.',
+    'template':'Escolha a forma abaixo, clique na origem (encaixa na célula) e arraste até o alcance/direção desejada. A forma fica marcada no mapa — selecione-a depois para ajustar tamanho, direção, cor ou preenchimento, ou mova-a arrastando.'
+  };
+  const uid = () => 'id'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+
+  // ================= generic modal (password prompts) =================
+  const MODAL_REMOVE = Symbol('remove'); // sentinel returned when the "Remover senha" button is used
+  // Resolves with the typed string, null if cancelled/closed, or MODAL_REMOVE if the
+  // "Remover senha" button was used (only shown when opts.showRemove is true).
+  // opts.password=false shows a plain text input instead of a masked one.
+  function askModal(title, text, opts={}){
+    return new Promise(resolve=>{
+      const overlay = document.getElementById('genModal');
+      document.getElementById('genModalTitle').textContent = title;
+      document.getElementById('genModalText').textContent = text;
+      const input = document.getElementById('genModalInput');
+      const eyeBtn = document.getElementById('genModalEye');
+      const removeBtn = document.getElementById('genModalRemove');
+      input.value = '';
+      const isPasswordField = opts.password!==false;
+      input.type = isPasswordField ? 'password' : 'text';
+      eyeBtn.style.display = isPasswordField ? 'inline-block' : 'none';
+      removeBtn.style.display = opts.showRemove ? 'inline-block' : 'none';
+      document.getElementById('genModalConfirm').textContent = opts.confirmLabel || 'Confirmar';
+      overlay.classList.add('active');
+      setTimeout(()=> input.focus(), 30);
+      const confirmBtn = document.getElementById('genModalConfirm');
+      const cancelBtn = document.getElementById('genModalCancel');
+      function toggleEye(){ input.type = input.type==='password' ? 'text' : 'password'; }
+      function cleanup(){
+        overlay.classList.remove('active');
+        confirmBtn.removeEventListener('click', onConfirm);
+        cancelBtn.removeEventListener('click', onCancel);
+        removeBtn.removeEventListener('click', onRemove);
+        eyeBtn.removeEventListener('click', toggleEye);
+        input.removeEventListener('keydown', onKey);
+      }
+      function onConfirm(){ const v = input.value; cleanup(); resolve(v); }
+      function onCancel(){ cleanup(); resolve(null); }
+      function onRemove(){ cleanup(); resolve(MODAL_REMOVE); }
+      function onKey(e){ if(e.key==='Enter'){ e.preventDefault(); onConfirm(); } else if(e.key==='Escape'){ onCancel(); } }
+      confirmBtn.addEventListener('click', onConfirm);
+      cancelBtn.addEventListener('click', onCancel);
+      removeBtn.addEventListener('click', onRemove);
+      eyeBtn.addEventListener('click', toggleEye);
+      input.addEventListener('keydown', onKey);
+    });
+  }
+  // Not real cryptographic security — just enough to avoid storing/displaying the map
+  // password in plain text. Anyone with real technical access to the storage could still
+  // get in; this is a casual gate against accidental/curious access, not a vault.
+  function simpleHash(str){
+    let h = 5381;
+    for(let i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h = h & h; }
+    return 'h'+(h>>>0).toString(36);
+  }
+
+  // ================= storage backend =================
+  // Three tiers, tried in order:
+  //  1) window.storage — only exists inside Claude's Artifact panel.
+  //  2) Firebase Realtime Database — used when FIREBASE_DB_URL below is filled in, so this
+  //     works as a real, independently-hosted multiplayer tool (see setup notes below).
+  //  3) localStorage — last-resort fallback so maps still save even with nothing configured,
+  //     but then they live only in this one browser, not shared with anyone else.
+  const usingCloudStorage = !!window.storage;
+
+  // ---- Firebase setup (optional) ----
+  // To host Lumenic outside of Claude with real sync between different people/devices:
+  //   1. Go to https://console.firebase.google.com → create a free project.
+  //   2. In the left menu, open "Realtime Database" → "Create Database" → pick any region.
+  //   3. On the "Rules" tab, set:  { "rules": { ".read": true, ".write": true } }  and publish.
+  //      (This app has no login system, so this just matches how the rest of it already
+  //      works — anyone with a map's link/ID can reach it; each map's own password is the
+  //      real privacy layer, same as when running inside a Claude Artifact.)
+  //   4. Back on the Realtime Database page, copy the URL shown at the top — looks like
+  //      https://your-project-default-rtdb.firebaseio.com — and paste it below.
+  const FIREBASE_DB_URL = 'https://lumenic-a78b1-default-rtdb.firebaseio.com'; // <- paste your Realtime Database URL here, between the quotes
+  const hasFirebase = !!FIREBASE_DB_URL;
+  // Maps this app's flat key names onto a small Firebase tree instead of storing them
+  // verbatim — 'dm-map:xyz' held as-is would create an illegal/confusing nested path.
+  function fbPath(key){
+    if(key==='dm-maps-index') return 'mapsIndex';
+    if(key.indexOf('dm-map:')===0) return 'maps/'+encodeURIComponent(key.slice('dm-map:'.length));
+    return encodeURIComponent(key);
+  }
+  const firebaseStore = {
+    async get(key){
+      const res = await fetch(`${FIREBASE_DB_URL}/${fbPath(key)}.json`);
+      if(!res.ok) throw new Error('Firebase GET falhou: '+res.status);
+      const value = await res.json();
+      return value==null ? null : {key, value, shared:true};
+    },
+    async set(key, value){
+      const res = await fetch(`${FIREBASE_DB_URL}/${fbPath(key)}.json`, {
+        method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(value)
+      });
+      if(!res.ok) throw new Error('Firebase PUT falhou: '+res.status);
+      return {key, value, shared:true};
+    },
+    async delete(key){
+      const res = await fetch(`${FIREBASE_DB_URL}/${fbPath(key)}.json`, {method:'DELETE'});
+      return res.ok ? {key, deleted:true, shared:true} : null;
+    }
+  };
+  const LS_PREFIX = 'lumenic:';
+  const localFallback = {
+    async get(key){
+      try{
+        const raw = localStorage.getItem(LS_PREFIX+key);
+        return raw===null ? null : {key, value: raw, shared:false};
+      }catch(e){ return null; }
+    },
+    async set(key, value){
+      try{ localStorage.setItem(LS_PREFIX+key, value); return {key, value, shared:false}; }
+      catch(e){ return null; }
+    },
+    async delete(key){
+      try{ localStorage.removeItem(LS_PREFIX+key); return {key, deleted:true, shared:false}; }
+      catch(e){ return null; }
+    },
+    async list(prefix){
+      try{
+        const keys=[];
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(k && k.indexOf(LS_PREFIX)===0){
+            const bare = k.slice(LS_PREFIX.length);
+            if(!prefix || bare.indexOf(prefix)===0) keys.push(bare);
+          }
+        }
+        return {keys, prefix, shared:false};
+      }catch(e){ return null; }
+    }
+  };
+  // Shared data (map index, individual maps) goes to Firebase when it's configured; purely
+  // local data (author name, "tutorial seen" flag) always stays in this browser regardless —
+  // there's no reason for that to ever leave the device.
+  const store = {
+    async get(key, shared){
+      if(usingCloudStorage) return window.storage.get(key, shared);
+      if(shared && hasFirebase) return firebaseStore.get(key);
+      return localFallback.get(key);
+    },
+    async set(key, value, shared){
+      if(usingCloudStorage) return window.storage.set(key, value, shared);
+      if(shared && hasFirebase) return firebaseStore.set(key, value);
+      return localFallback.set(key, value);
+    },
+    async delete(key, shared){
+      if(usingCloudStorage) return window.storage.delete(key, shared);
+      if(shared && hasFirebase) return firebaseStore.delete(key);
+      return localFallback.delete(key);
+    },
+    async list(prefix, shared){
+      if(usingCloudStorage) return window.storage.list(prefix, shared);
+      return localFallback.list(prefix);
+    }
+  };
+  // Downscales/compresses an uploaded image before storing it as base64, so token portraits
+  // don't blow past the storage size limit or bloat the map's save payload.
+  function compressImageFile(file, maxDim){
+    return new Promise((resolve,reject)=>{
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          let w=img.width, h=img.height;
+          const scale = Math.min(1, maxDim/Math.max(w,h));
+          w = Math.max(1,Math.round(w*scale)); h = Math.max(1,Math.round(h*scale));
+          const canvas = document.createElement('canvas');
+          canvas.width=w; canvas.height=h;
+          canvas.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(canvas.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = () => reject(new Error('Não foi possível ler a imagem'));
+        img.src = reader.result;
+      };
+      reader.onerror = () => reject(new Error('Não foi possível ler o arquivo'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ================= state =================
+  let screen = 'gallery';
+  let mapsIndex = [];
+  let authorName = '';
+  // Purely local identity — never synced — so this browser knows which player-owned tokens
+  // belong to "me" when deciding what can be dragged in player mode.
+  let myPlayerName = localStorage.getItem('lumenic-player-name') || '';
+  let currentMap = null;
+  let currentColor = TERRAINS[0].color;
+  let currentWallColor = '#17110a';
+  let currentDoorColor = '#c9932f';
+  let tool = 'select';
+  let selection = null; // {kind:'cell'|'edge'|'object', key/id}
+  let multiSelection = new Set(); // multiple object ids selected together
+  let isPainting = false;
+  let dragObj = null;
+  let dragObjStart = null; // {x,y} object's position when a single drag began, for the drag-ruler
+  let dragGroup = null; // {startX,startY, items:[{id,x0,y0,locked}]}
+  let areaStart = null; // {r,c} for the "preencher área" tool
+  let areaEnd = null;
+  let isMeasuring = false; // true while the "Régua" tool is being dragged
+  let rulerStart = null; // {x,y}
+  let rulerEnd = null; // {x,y}
+  let templateShape = 'circle';
+  let templateFilled = true;
+  let templateColor = '#7fb8a6';
+  let isPlacingTemplate = false;
+  let templateOrigin = null; // {x,y} snapped
+  let templateCursor = null; // {x,y} raw, live drag point
+  const CELL_METERS = 1.5; // 1 square = 5 ft ≈ 1.5 m (5e combat grid)
+
+  // ================= scenery / world tools =================
+  const PROP_KIND_ICONS = {
+    chest:{icon:'🧰',label:'Baú'}, barrel:{icon:'🛢️',label:'Barril'}, crate:{icon:'📦',label:'Caixote'},
+    rubble:{icon:'🪨',label:'Escombros'}, statue:{icon:'🗿',label:'Estátua'}, weapon:{icon:'⚔️',label:'Arma no chão'},
+    trap:{icon:'⚠️',label:'Armadilha'}, torch:{icon:'🕯️',label:'Tocha (decorativa)'}, campfire:{icon:'🔥',label:'Fogueira'},
+    tree:{icon:'🌳',label:'Árvore'}, bush:{icon:'🌿',label:'Arbusto'}, grass:{icon:'🌾',label:'Grama alta'},
+    flower:{icon:'🌸',label:'Flores'}, rock:{icon:'🪨',label:'Rocha'}
+  };
+  const PROP_TOOL_KINDS = ['chest','barrel','crate','rubble','statue','weapon','trap','torch','campfire'];
+  const VEG_TOOL_KINDS = ['tree','bush','grass','flower','rock'];
+  // Hand-drawn vector icons (a 24x24 box centered on 0,0) for the props that benefit most
+  // from looking like they belong in Lumenic rather than a generic platform emoji. Kinds
+  // not listed here (statue, weapon, trap, and the vegetation kinds) keep their emoji for
+  // now — easy to extend the same way later.
+  const PROP_VECTOR_ICONS = {
+    chest: `
+      <rect x="-10" y="-2" width="20" height="11" rx="1.4" fill="#6b4a28" stroke="#241708" stroke-width="1"/>
+      <path d="M -10 -2 Q -10 -11 0 -11 Q 10 -11 10 -2 Z" fill="#7d5a34" stroke="#241708" stroke-width="1"/>
+      <rect x="-10" y="-3.1" width="20" height="2.1" fill="#c9932f"/>
+      <rect x="-1.7" y="-4" width="3.4" height="5.2" rx="0.8" fill="#e8c468" stroke="#241708" stroke-width="0.6"/>`,
+    'chest-open': `
+      <rect x="-10" y="-2" width="20" height="11" rx="1.4" fill="#6b4a28" stroke="#241708" stroke-width="1"/>
+      <rect x="-9" y="-2" width="18" height="2.4" fill="#120c05"/>
+      <path d="M -9.5 -2.2 Q -10 -13.5 -2 -14.2 Q 5 -14.6 7 -8.8" fill="none" stroke="#7d5a34" stroke-width="2.6" stroke-linecap="round"/>
+      <circle cx="-2" cy="1.5" r="1.3" fill="#ffe27a"/>
+      <circle cx="2.4" cy="0.5" r="1" fill="#ffe27a"/>
+      <circle cx="0" cy="2.6" r="0.9" fill="#ffe27a"/>`,
+    crate: `
+      <rect x="-10" y="-9" width="20" height="18" fill="#8a6a45" stroke="#241708" stroke-width="1.3"/>
+      <line x1="-10" y1="-9" x2="10" y2="9" stroke="#4d3820" stroke-width="1.2"/>
+      <line x1="10" y1="-9" x2="-10" y2="9" stroke="#4d3820" stroke-width="1.2"/>
+      <rect x="-10" y="-9" width="20" height="4" fill="#6b4e2e" stroke="#241708" stroke-width="1"/>
+      <rect x="-10" y="5" width="20" height="4" fill="#6b4e2e" stroke="#241708" stroke-width="1"/>`,
+    barrel: `
+      <path d="M -7 -10 Q -10 -10 -10 -4 L -10 4 Q -10 10 -7 10 L 7 10 Q 10 10 10 4 L 10 -4 Q 10 -10 7 -10 Z" fill="#8a6a45" stroke="#241708" stroke-width="1"/>
+      <line x1="-9.6" y1="-5" x2="9.6" y2="-5" stroke="#3b2a17" stroke-width="1.5"/>
+      <line x1="-10" y1="0" x2="10" y2="0" stroke="#3b2a17" stroke-width="1.5"/>
+      <line x1="-9.6" y1="5" x2="9.6" y2="5" stroke="#3b2a17" stroke-width="1.5"/>`,
+    torch: `
+      <rect x="-1.4" y="-2" width="2.8" height="13" fill="#6b4a28" stroke="#241708" stroke-width="0.6"/>
+      <path d="M 0 -13 C 4.4 -9.6 4.4 -5.2 0 -3 C -4.4 -5.2 -4.4 -9.6 0 -13 Z" fill="#e8632f"/>
+      <path d="M 0 -10.5 C 2.4 -8.4 2.4 -5.6 0 -4 C -2.4 -5.6 -2.4 -8.4 0 -10.5 Z" fill="#ffcf5c"/>`,
+    campfire: `
+      <line x1="-8" y1="6" x2="8" y2="2" stroke="#6b4a28" stroke-width="2.6" stroke-linecap="round"/>
+      <line x1="-8" y1="2" x2="8" y2="6" stroke="#6b4a28" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M 0 -11 C 4.6 -6.6 4.6 -1 0 3.4 C -4.6 -1 -4.6 -6.6 0 -11 Z" fill="#e8632f"/>
+      <path d="M 0 -7.4 C 2.6 -4.6 2.6 -1 0 1.8 C -2.6 -1 -2.6 -4.6 0 -7.4 Z" fill="#ffcf5c"/>`
+  };
+  let currentPropKind = 'chest';
+  let currentVegKind = 'tree';
+  let isDrawingPath = false;
+  let pathPoints = [];
+  let pathCursor = null;
+  let pathKind = 'road';
+  let pathColor = '#8a6a45';
+  let pathWidth = 12;
+  let zoom = 1;
+  let mode = 'gm';
+  let saveTimer = null;
+  let retryTimer = null;
+
+  // ================= data model =================
+  function makeFloor(name, gridType){
+    return {
+      id: uid(), name,
+      rows: gridType==='hex' ? 8 : 12,
+      cols: gridType==='hex' ? 10 : 16,
+      cells: new Map(),
+      walls: new Map(),
+      fog: new Set(),
+      objects: [],
+      notes: '',
+      pings: []
+    };
+  }
+  function makeMap(name, gridType){
+    return {
+      id: uid(), name: name || 'Mapa sem nome', gridType,
+      author: authorName || 'Anônimo',
+      createdAt: Date.now(), updatedAt: Date.now(),
+      floors: [makeFloor('Nível 1', gridType)],
+      currentFloorIndex: 0,
+      passwordHash: null,
+      visibility: 'public',
+      diceLog: [],
+      initiative: {round:1, currentIndex:-1, entries:[]}
+    };
+  }
+  const F = () => currentMap.floors[currentMap.currentFloorIndex];
+  const isHex = () => currentMap.gridType === 'hex';
+
+  function serializeMap(m){
+    return Object.assign({}, m, {
+      floors: m.floors.map(f => Object.assign({}, f, {
+        cells: [...f.cells.entries()],
+        walls: [...f.walls.entries()],
+        fog: [...f.fog]
+      }))
+    });
+  }
+  function reviveMap(d){
+    d.floors = (d.floors||[]).map(f => Object.assign({}, f, {
+      cells: new Map(f.cells||[]),
+      walls: new Map(f.walls||[]),
+      fog: new Set(f.fog||[]),
+      objects: f.objects||[],
+      notes: f.notes||'',
+      pings: f.pings||[]
+    }));
+    if(!d.floors.length) d.floors = [makeFloor('Nível 1', d.gridType)];
+    if(!d.currentFloorIndex || d.currentFloorIndex>=d.floors.length) d.currentFloorIndex = 0;
+    if(!Array.isArray(d.diceLog)) d.diceLog = [];
+    if(!d.visibility) d.visibility = 'public';
+    if(!d.initiative || typeof d.initiative!=='object') d.initiative = {round:1, currentIndex:-1, entries:[]};
+    if(!Array.isArray(d.initiative.entries)) d.initiative.entries = [];
+    return d;
+  }
+  // Which maps belong to "me" on this browser — kept purely client-side (not synced), so a
+  // private map still shows up in my own gallery after I create it or open it via a direct
+  // link, even though it's hidden from everyone else's listing.
+  function getMyMapIds(){
+    try{ return JSON.parse(localStorage.getItem('lumenic-my-maps')||'[]'); }catch(e){ return []; }
+  }
+  function addMyMapId(id){
+    try{
+      const ids = getMyMapIds();
+      if(!ids.includes(id)){ ids.push(id); localStorage.setItem('lumenic-my-maps', JSON.stringify(ids)); }
+    }catch(e){}
+  }
+
+  // ================= storage =================
+  function delay(ms){ return new Promise(res=>setTimeout(res,ms)); }
+  async function loadIndex(){
+    try{ const r = await store.get('dm-maps-index', true); return r && r.value ? JSON.parse(r.value) : []; }
+    catch(e){ return []; }
+  }
+  async function saveIndex(){
+    for(let attempt=0; attempt<3; attempt++){
+      try{ const r = await store.set('dm-maps-index', JSON.stringify(mapsIndex), true); if(r) return true; }
+      catch(e){ console.error('Falha ao salvar índice de mapas', e); }
+      await delay(400);
+    }
+    return false;
+  }
+  async function loadMapById(id){
+    for(let attempt=0; attempt<3; attempt++){
+      try{
+        const r = await store.get('dm-map:'+id, true);
+        if(r && r.value) return reviveMap(JSON.parse(r.value));
+        return null; // key genuinely doesn't exist, no point retrying
+      }catch(e){
+        console.error('Erro ao carregar mapa, tentativa '+(attempt+1), e);
+        await delay(400);
+      }
+    }
+    return null;
+  }
+  async function persistMap(){
+    if(!currentMap) return false;
+    document.getElementById('saveStatus').textContent = 'Salvando…';
+    const payload = JSON.stringify(serializeMap(currentMap));
+    let ok = false;
+    const delays = [300, 700, 1500, 3000];
+    for(let attempt=0; attempt<delays.length && !ok; attempt++){
+      try{
+        const r = await store.set('dm-map:'+currentMap.id, payload, true);
+        if(r) ok = true;
+      }catch(e){ console.error('Erro ao salvar mapa, tentativa '+(attempt+1), e); }
+      if(!ok) await delay(delays[attempt]);
+    }
+    if(ok){
+      const idx = mapsIndex.find(m=>m.id===currentMap.id);
+      if(idx){ idx.name=currentMap.name; idx.updatedAt=currentMap.updatedAt; idx.author=currentMap.author; idx.locked=!!currentMap.passwordHash; idx.visibility=currentMap.visibility||'public'; }
+      else { mapsIndex.push({id:currentMap.id, name:currentMap.name, gridType:currentMap.gridType, author:currentMap.author, updatedAt:currentMap.updatedAt, locked:!!currentMap.passwordHash, visibility:currentMap.visibility||'public'}); }
+      await saveIndex();
+      document.getElementById('saveStatus').textContent = 'Salvo às '+new Date(currentMap.updatedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    } else {
+      document.getElementById('saveStatus').textContent = 'Sem conexão com o armazenamento — suas alterações continuam aqui e serão salvas assim que possível.';
+    }
+    return ok;
+  }
+  // Keeps retrying quietly in the background instead of giving up, so a flaky connection
+  // never means losing work — it just means "saved a bit later" once the link recovers.
+  function attemptSaveWithRetry(){
+    clearTimeout(retryTimer);
+    persistMap().then(ok=>{
+      if(!ok && currentMap){ retryTimer = setTimeout(attemptSaveWithRetry, 6000); }
+    });
+  }
+  function scheduleSave(){
+    if(!currentMap) return;
+    currentMap.updatedAt = Date.now();
+    document.getElementById('saveStatus').textContent = 'Alterações não salvas…';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(attemptSaveWithRetry, 700);
+  }
+  async function loadAuthorName(){
+    try{ const r = await store.get('dm-author-name', false); return r && r.value ? r.value : ''; }catch(e){ return ''; }
+  }
+  async function saveAuthorName(n){
+    try{ await store.set('dm-author-name', n, false); }catch(e){}
+  }
+
+  // ================= gallery =================
+  function timeAgo(ts){
+    const s = Math.floor((Date.now()-ts)/1000);
+    if(s<60) return 'agora mesmo';
+    if(s<3600) return 'há '+Math.floor(s/60)+' min';
+    if(s<86400) return 'há '+Math.floor(s/3600)+' h';
+    return 'há '+Math.floor(s/86400)+' dias';
+  }
+  function renderGallery(){
+    const list = document.getElementById('galleryList');
+    const myIds = getMyMapIds();
+    // private maps are hidden from everyone except the browser that created/opened them —
+    // there are no accounts here, so "mine" just means "this browser has seen it before"
+    const visible = mapsIndex.filter(m => m.visibility!=='private' || myIds.includes(m.id));
+    if(!visible.length){
+      list.innerHTML = '<div class="empty-state">Nenhum mapa ainda. Crie o primeiro acima — todo mundo que abrir esta ferramenta poderá vê-lo.</div>';
+      return;
+    }
+    const sorted = [...visible].sort((a,b)=>b.updatedAt-a.updatedAt);
+    list.innerHTML = sorted.map(m => `
+      <div class="card" data-id="${m.id}">
+        <span class="badge ${m.gridType}">${m.gridType==='hex'?'Mundo':'Masmorra'}</span>
+        ${m.locked ? '<span class="badge" title="Protegido por senha" style="border-color:var(--gold-dim);color:var(--gold);">🔒 Senha</span>' : ''}
+        ${m.visibility==='private' ? '<span class="badge" title="Só aparece pra quem já viu este mapa neste navegador">🙈 Privado</span>' : ''}
+        <h3>${escapeHtml(m.name)}</h3>
+        <div class="meta">por ${escapeHtml(m.author||'Anônimo')} · atualizado ${timeAgo(m.updatedAt)}</div>
+        <div class="actions">
+          <button class="btn small primary" data-open="${m.id}">Abrir</button>
+          <button class="btn small danger" data-del="${m.id}">Excluir</button>
+        </div>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-open]').forEach(b=> b.addEventListener('click', ()=> openMap(b.dataset.open)));
+    list.querySelectorAll('[data-del]').forEach(b=> b.addEventListener('click', ()=> deleteMap(b.dataset.del)));
+  }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  async function openMap(id){
+    const m = await loadMapById(id);
+    if(!m){
+      alert('Não foi possível carregar esse mapa (pode ter sido excluído, ou houve uma falha de conexão). A lista será atualizada.');
+      mapsIndex = await loadIndex();
+      renderGallery();
+      return;
+    }
+    if(m.passwordHash){
+      const entered = await askModal('Mapa protegido', `"${m.name}" tem senha. Digite-a para abrir.`, {confirmLabel:'Abrir'});
+      if(entered===null) return;
+      if(simpleHash(entered) !== m.passwordHash){ alert('Senha incorreta.'); return; }
+    }
+    currentMap = m;
+    addMyMapId(m.id);
+    selection = null; multiSelection.clear(); tool = 'select'; zoom = 1; mode = 'gm';
+    showEditor();
+  }
+  async function deleteMap(id){
+    const m = mapsIndex.find(x=>x.id===id);
+    if(!confirm(`Excluir o mapa "${m?m.name:''}"? Isso é permanente para todos.`)) return;
+    mapsIndex = mapsIndex.filter(x=>x.id!==id);
+    await saveIndex();
+    try{ await store.delete('dm-map:'+id, true); }catch(e){}
+    renderGallery();
+  }
+
+  document.getElementById('btnCreateMap').addEventListener('click', ()=>{
+    const name = document.getElementById('newMapName').value.trim() || 'Mapa sem nome';
+    const gridType = document.getElementById('newMapType').value;
+    const m = makeMap(name, gridType);
+    currentMap = m;
+    addMyMapId(m.id);
+    document.getElementById('newMapName').value = '';
+    selection=null; multiSelection.clear(); tool='select'; zoom=1; mode='gm';
+    showEditor();
+    attemptSaveWithRetry(); // saves in the background; keeps retrying quietly if it fails at first
+  });
+  document.getElementById('btnRefreshGallery').addEventListener('click', async ()=>{
+    mapsIndex = await loadIndex();
+    renderGallery();
+  });
+  document.getElementById('authorInput').addEventListener('change', e=>{
+    authorName = e.target.value.trim();
+    saveAuthorName(authorName);
+  });
+  const playerNameInput = document.getElementById('playerNameInput');
+  playerNameInput.value = myPlayerName;
+  playerNameInput.addEventListener('change', e=>{
+    myPlayerName = e.target.value.trim();
+    try{ localStorage.setItem('lumenic-player-name', myPlayerName); }catch(err){}
+    renderBoard();
+  });
+
+  // ================= screen switching =================
+  let tutorialShownThisSession = false;
+  // ================= multiplayer sync (polling) =================
+  // Not real-time (no server/websocket here), but close enough in practice: every few
+  // seconds, quietly check whether someone else saved a newer version of this map, and if
+  // so, pull it in and redraw — skipped entirely while the person is in the middle of doing
+  // something (dragging, painting, typing, a modal open) so nothing gets yanked away.
+  let syncTimer = null;
+  function userIsInteracting(){
+    if(isPainting || dragObj || dragGroup || isMeasuring || isPlacingTemplate) return true;
+    if(document.getElementById('genModal').classList.contains('active')) return true;
+    if(document.getElementById('coachOverlay').classList.contains('active')) return true;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if(tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT') return true;
+    return false;
+  }
+  function flashSyncIndicator(){
+    const el = document.getElementById('saveStatus');
+    if(!el) return;
+    const prev = el.textContent;
+    el.textContent = '🔄 Atualizado por outra pessoa';
+    setTimeout(()=>{ if(el.textContent==='🔄 Atualizado por outra pessoa') el.textContent = prev; }, 2500);
+  }
+  async function pollForRemoteChanges(){
+    if(!currentMap || screen!=='editor' || userIsInteracting()) return;
+    try{
+      const r = await store.get('dm-map:'+currentMap.id, true);
+      if(!r || !r.value) return;
+      const remote = JSON.parse(r.value);
+      if(remote.updatedAt && remote.updatedAt > currentMap.updatedAt){
+        currentMap = reviveMap(remote);
+        renderAll();
+        updatePasswordButtonUI();
+        updateVisibilityButtonUI();
+        flashSyncIndicator();
+      }
+    }catch(e){ /* transient errors are fine — just try again next tick */ }
+  }
+  function startSyncPolling(){
+    stopSyncPolling();
+    syncTimer = setInterval(pollForRemoteChanges, 5000);
+  }
+  function stopSyncPolling(){
+    if(syncTimer){ clearInterval(syncTimer); syncTimer=null; }
+  }
+  document.addEventListener('visibilitychange', ()=>{
+    if(!document.hidden) pollForRemoteChanges();
+  });
+
+  function showEditor(){
+    screen='editor';
+    document.getElementById('screenGallery').style.display='none';
+    document.getElementById('screenEditor').style.display='block';
+    document.getElementById('mapNameInput').value = currentMap.name;
+    updatePasswordButtonUI();
+    updateVisibilityButtonUI();
+    buildToolPanelForGridType();
+    setMode('gm');
+    renderAll();
+    startSyncPolling();
+    if(!tutorialShownThisSession){
+      tutorialShownThisSession = true;
+      tutorialDismissed().then(dismissed=>{
+        if(!dismissed) setTimeout(startTutorial, 350);
+      });
+    }
+  }
+  async function showGallery(){
+    screen='gallery';
+    document.getElementById('screenEditor').style.display='none';
+    document.getElementById('screenGallery').style.display='block';
+    renderGallery();
+    mapsIndex = await loadIndex();
+    renderGallery();
+  }
+  document.getElementById('btnBack').addEventListener('click', async ()=>{
+    clearTimeout(saveTimer);
+    stopSyncPolling();
+    const ok = await persistMap();
+    if(!ok && !confirm('Não foi possível salvar as últimas alterações. Sair mesmo assim e perder o que não foi salvo?')) return;
+    currentMap=null;
+    showGallery();
+  });
+  document.getElementById('mapNameInput').addEventListener('change', e=>{
+    currentMap.name = e.target.value.trim() || 'Mapa sem nome';
+    scheduleSave();
+  });
+  document.getElementById('btnDeleteMap').addEventListener('click', async ()=>{
+    if(!confirm('Excluir este mapa inteiro? Isso é permanente para todos.')) return;
+    mapsIndex = mapsIndex.filter(x=>x.id!==currentMap.id);
+    await saveIndex();
+    try{ await store.delete('dm-map:'+currentMap.id, true); }catch(e){}
+    currentMap=null;
+    showGallery();
+  });
+
+  // ================= tool panel per grid type =================
+  function buildToolPanelForGridType(){
+    const hex = isHex();
+    document.getElementById('terrainLabel').textContent = hex ? 'Terreno' : 'Piso / Sala';
+    document.getElementById('structureGroup').style.display = hex ? 'none' : '';
+    document.querySelector('[data-tool="wall"]').style.display = hex ? 'none' : '';
+    document.querySelector('[data-tool="door"]').style.display = hex ? 'none' : '';
+    document.getElementById('worldToolsGroup').style.display = hex ? '' : 'none';
+    const grid = document.getElementById('terrainSwatches');
+    grid.innerHTML = TERRAINS.map(t=>`<button class="swatch-btn" data-color="${t.color}" title="${t.name}" style="background:${t.color}"></button>`).join('');
+    grid.querySelectorAll('.swatch-btn').forEach(b=>{
+      b.addEventListener('click', ()=>{ currentColor=b.dataset.color; tool='floor'; syncSwatchActive(); renderAll(); });
+    });
+    document.getElementById('customColor').value = currentColor;
+    document.getElementById('rowsLabel').textContent = hex ? 'Linhas' : 'Linhas';
+    document.getElementById('colsLabel').textContent = hex ? 'Colunas' : 'Colunas';
+    syncSwatchActive();
+    renderLegend();
+  }
+  function syncSwatchActive(){
+    document.querySelectorAll('.swatch-btn').forEach(b=> b.classList.toggle('active', tool==='floor' && b.dataset.color===currentColor));
+  }
+  document.getElementById('customColor').addEventListener('input', e=>{
+    currentColor = e.target.value; tool='floor'; syncSwatchActive(); renderAll();
+  });
+
+  document.querySelectorAll('.tool-btn[data-tool]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      tool=b.dataset.tool;
+      if(tool!=='select'){ multiSelection.clear(); selection=null; }
+      areaStart=null; areaEnd=null; isPainting=false;
+      isPlacingTemplate=false; templateOrigin=null; templateCursor=null;
+      isDrawingPath=false; pathPoints=[]; pathCursor=null;
+      renderAll();
+    });
+  });
+  document.querySelectorAll('#templateShapeGrid [data-shape]').forEach(b=>{
+    b.addEventListener('click', ()=>{ templateShape=b.dataset.shape; renderToolInfo(); });
+  });
+  document.getElementById('templateFilledToggle').addEventListener('change', e=>{ templateFilled=e.target.checked; });
+  document.getElementById('templateColorPicker').addEventListener('input', e=>{ templateColor=e.target.value; });
+  document.getElementById('edgeColorPicker').addEventListener('input', e=>{
+    if(tool==='wall') currentWallColor=e.target.value; else if(tool==='door') currentDoorColor=e.target.value;
+  });
+
+  // ================= mode (GM / player) =================
+  function setMode(m){
+    mode=m;
+    document.getElementById('modeGM').classList.toggle('active', m==='gm');
+    document.getElementById('modePlayer').classList.toggle('active', m==='player');
+    renderBoard();
+  }
+  document.getElementById('modeGM').addEventListener('click', ()=> setMode('gm'));
+  document.getElementById('modePlayer').addEventListener('click', ()=> setMode('player'));
+
+  // ================= floor helpers =================
+  function isFloorCell(r,c){
+    if(r<0||r>=F().rows||c<0||c>=F().cols) return false;
+    return F().cells.has(r+','+c);
+  }
+  function paintCellsAlong(r,c){
+    const k = r+','+c;
+    if(r<0||r>=F().rows||c<0||c>=F().cols) return;
+    if(tool==='floor'){ F().cells.set(k,{color:currentColor}); }
+    else if(tool==='erase'){
+      F().cells.delete(k); F().fog.delete(k);
+      // objects are freely placed; erase only clears terrain, not objects
+    }
+    else if(tool==='fog-on'){ F().fog.add(k); }
+    else if(tool==='fog-off'){ F().fog.delete(k); }
+  }
+
+  // ================= global fog & token vision =================
+  function fogFillAll(){
+    for(let r=0;r<F().rows;r++) for(let c=0;c<F().cols;c++) F().fog.add(r+','+c);
+    renderAll(); scheduleSave();
+  }
+  function fogClearAll(){
+    F().fog.clear();
+    renderAll(); scheduleSave();
+  }
+  // Converts a pixel distance into a human distance label. Square grid = D&D 5e's 5ft/1.5m
+  // squares. Hex world maps use varying real-world scale, so those are labeled in hex count.
+  function distanceLabel(distPx){
+    if(isHex()) return (distPx/(HEX_SIZE*1.5)).toFixed(1)+' hex';
+    return ((distPx/CELL)*CELL_METERS).toFixed(1)+' m';
+  }
+  function pxToMeters(px){ return isHex() ? (px/(HEX_SIZE*1.5))*CELL_METERS : (px/CELL)*CELL_METERS; }
+  function metersToPx(m){ return isHex() ? (m/CELL_METERS)*(HEX_SIZE*1.5) : (m/CELL_METERS)*CELL; }
+  // ---- line-of-sight helpers (square grid only — hex maps have no walls) ----
+  // Extends each wall segment a few px past its true endpoints, for line-of-sight
+  // purposes only (this never affects the visible wall line). Two walls that meet at a
+  // shared grid corner are stored as two separate segments that only *touch* at that
+  // point — a sight-ray aimed exactly at that shared vertex can mathematically slip
+  // through the gap between them (a "proper crossing" test never fires on a touch).
+  // Extending each segment past its real endpoint makes the segments overlap right at
+  // the corner, sealing it, so a ray can no longer thread that needle.
+  const LOS_SEAL = 4;
+  function wallSegments(){
+    const segs = [];
+    F().walls.forEach((w,key)=>{
+      // both walls AND doors block vision, per how the table wants it
+      const p = key.split(':');
+      if(p[0]==='H'){ const r=+p[1], c=+p[2]; segs.push({x1:c*CELL-LOS_SEAL,y1:r*CELL,x2:(c+1)*CELL+LOS_SEAL,y2:r*CELL}); }
+      else { const r=+p[1], c=+p[2]; segs.push({x1:c*CELL,y1:r*CELL-LOS_SEAL,x2:c*CELL,y2:(r+1)*CELL+LOS_SEAL}); }
+    });
+    return segs;
+  }
+  function ccw(a,b,c){ return (c.y-a.y)*(b.x-a.x) - (b.y-a.y)*(c.x-a.x); }
+  function segmentsIntersect(p1,p2,p3,p4){
+    const d1=ccw(p3,p4,p1), d2=ccw(p3,p4,p2), d3=ccw(p1,p2,p3), d4=ccw(p1,p2,p4);
+    return ((d1>0&&d2<0)||(d1<0&&d2>0)) && ((d3>0&&d4<0)||(d3<0&&d4>0));
+  }
+  function lineOfSightBlocked(p1,p2,segs){
+    for(const s of segs){ if(segmentsIntersect(p1,p2,{x:s.x1,y:s.y1},{x:s.x2,y:s.y2})) return true; }
+    return false;
+  }
+  // A single ray to the exact center of a cell is what caused the old "leaking" bug: when
+  // that ray happens to graze exactly along a wall's corner (very common on room corners,
+  // since walls sit exactly on the grid), the crossing test becomes numerically ambiguous —
+  // sometimes wrongly blocked, sometimes wrongly clear. Sampling several points per cell
+  // (its center plus its four corners, nudged slightly inward so they never sit exactly on
+  // a wall line) and revealing the cell if ANY sample has a clear line fixes both directions
+  // of the bug: a cell right on a corner still lights up if the center-ray glitches, and a
+  // cell that's genuinely fully behind a wall stays dark because none of its samples clear it.
+  function cellSamplePoints(cx,cy){
+    const half = CELL/2 - 2; // inset 2px so samples don't land exactly on a wall line
+    return [
+      {x:cx, y:cy},
+      {x:cx-half, y:cy-half}, {x:cx+half, y:cy-half},
+      {x:cx-half, y:cy+half}, {x:cx+half, y:cy+half}
+    ];
+  }
+  // Cells currently within a single player token's vision radius, excluding anything
+  // blocked by a wall or door. Only cells still marked as fogged are considered —
+  // this never touches the underlying fog Set, it's a live, read-only computation.
+  // A bigger token (size > 1) reaches further — vision radius scales with token size.
+  function effectiveVisionRadiusPx(o){ return metersToPx(o.vision||0) * (o.size||1); }
+  // A "light source" is anything that reveals fog around a fixed point-and-radius: a player
+  // token's vision, or a static light object (torch/lantern/glowing rock). Both funnel
+  // through the same reveal math so light objects get identical wall-aware, corner-safe
+  // behavior for free.
+  function gatherLightSources(){
+    const sources = [];
+    F().objects.forEach(o=>{
+      if(o.type==='token-player' && o.vision>0) sources.push({x:o.x, y:o.y, radiusPx:effectiveVisionRadiusPx(o)});
+      else if(o.type==='light' && o.radius>0 && o.on!==false) sources.push({x:o.x, y:o.y, radiusPx:metersToPx(o.radius)*(o.size||1)});
+      else if(o.type==='prop' && (o.kind==='torch'||o.kind==='campfire') && o.lit!==false && (o.lightRadius||0)>0) sources.push({x:o.x, y:o.y, radiusPx:metersToPx(o.lightRadius)*(o.size||1)});
+    });
+    return sources;
+  }
+  function revealedCellsForSource(src, segs){
+    const result = new Set();
+    if(!src || !(src.radiusPx>0) || !F().fog.size) return result;
+    const radiusPx = src.radiusPx;
+    for(let r=0;r<F().rows;r++){
+      for(let c=0;c<F().cols;c++){
+        const key = r+','+c;
+        if(!F().fog.has(key)) continue;
+        const cx = isHex() ? hexCenter(c,r).x : c*CELL+CELL/2;
+        const cy = isHex() ? hexCenter(c,r).y : r*CELL+CELL/2;
+        if(Math.hypot(cx-src.x, cy-src.y) > radiusPx + CELL*0.75) continue; // cheap reject, with margin for corner samples
+        if(isHex()){
+          if(Math.hypot(cx-src.x, cy-src.y) <= radiusPx) result.add(key);
+          continue;
+        }
+        const samples = cellSamplePoints(cx,cy);
+        for(const p of samples){
+          if(Math.hypot(p.x-src.x, p.y-src.y) > radiusPx) continue;
+          if(!lineOfSightBlocked({x:src.x,y:src.y}, p, segs)){ result.add(key); break; }
+        }
+      }
+    }
+    return result;
+  }
+  // Union of everything every player token and light source currently reveals. Recomputed
+  // fresh on every render — so as a token moves, previously-lit cells naturally fall back
+  // into fog the instant they leave its radius, without the GM ever touching fog tools again.
+  // Static lights, by contrast, keep revealing the same spot until moved or deleted.
+  function allVisionRevealedCells(){
+    const segs = isHex() ? [] : wallSegments();
+    const result = new Set();
+    gatherLightSources().forEach(src=> revealedCellsForSource(src,segs).forEach(k=>result.add(k)));
+    return result;
+  }
+
+  // edges (square grid only)
+  function edgeSides(key){
+    const p = key.split(':');
+    if(p[0]==='H'){ const r=+p[1], c=+p[2]; return {a:[r-1,c], b:[r,c]}; }
+    const r=+p[1], c=+p[2]; return {a:[r,c-1], b:[r,c]};
+  }
+  function edgeUsable(key){
+    const {a,b} = edgeSides(key);
+    return isFloorCell(a[0],a[1]) || isFloorCell(b[0],b[1]);
+  }
+  function handleEdgeClick(key){
+    if(!edgeUsable(key)) return;
+    if(tool==='select'){ selection={kind:'edge', key}; renderAll(); return; }
+    if(tool==='erase'){ F().walls.delete(key); selection=null; renderAll(); scheduleSave(); return; }
+    if(tool==='wall' || tool==='door'){
+      const ex = F().walls.get(key);
+      if(ex && ex.kind===tool) F().walls.delete(key);
+      else F().walls.set(key,{kind:tool, color: tool==='wall' ? currentWallColor : currentDoorColor, blocking:true});
+      renderAll(); scheduleSave();
+    }
+  }
+
+  // ================= hex geometry =================
+  function hexCenter(col,row){
+    const s = HEX_SIZE;
+    const x = s*1.5*col + s + 24;
+    const yOff = (col % 2 === 1) ? s*Math.sqrt(3)/2 : 0;
+    const y = s*Math.sqrt(3)*row + s*Math.sqrt(3)/2 + yOff + 24;
+    return {x,y};
+  }
+  function hexPoints(cx,cy){
+    const s = HEX_SIZE;
+    let pts=[];
+    for(let i=0;i<6;i++){
+      const ang = Math.PI/180*60*i;
+      pts.push((cx+s*Math.cos(ang)).toFixed(1)+','+(cy+s*Math.sin(ang)).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+
+  // Pixel center of a given cell/hex coordinate, whichever grid type is active — the single
+  // source of truth other helpers (area bounding boxes, scatter, etc.) should use instead of
+  // hand-rolling their own col*CELL math, which silently breaks on hex maps.
+  function cellCenterAt(c,r){
+    return isHex() ? hexCenter(c,r) : {x:(c+0.5)*CELL, y:(r+0.5)*CELL};
+  }
+  // Real pixel bounding box covering a rectangular r/c cell selection — accounts for hex
+  // offset rows so a dragged selection on a world (hex) map maps to the actual area shown,
+  // not a warped one.
+  function areaPixelBounds(r0,c0,r1,c1){
+    if(isHex()){
+      const a = hexCenter(c0,r0), b = hexCenter(c1,r1);
+      return {x0:Math.min(a.x,b.x)-HEX_SIZE, y0:Math.min(a.y,b.y)-HEX_SIZE, x1:Math.max(a.x,b.x)+HEX_SIZE, y1:Math.max(a.y,b.y)+HEX_SIZE};
+    }
+    return {x0:c0*CELL, y0:r0*CELL, x1:(c1+1)*CELL, y1:(r1+1)*CELL};
+  }
+  // ================= objects =================
+  // Finds the center of whichever cell/hexagon is closest to a raw pixel point,
+  // so tokens and labels always "snap" onto the grid instead of landing between cells.
+  // For a token that spans multiple squares (size ~2 = 2x2, ~3 = 3x3, etc.), this centers it
+  // in the middle of that whole block instead of a single cell — e.g. a size-2 ogre snaps to
+  // the crossing point of 4 squares, the way a "large creature" token should sit on a grid.
+  function nearestCellCenter(pt, size){
+    if(isHex()){
+      let best=null, bd=Infinity;
+      for(let r=0;r<F().rows;r++){
+        for(let c=0;c<F().cols;c++){
+          const {x,y} = hexCenter(c,r);
+          const d = Math.hypot(x-pt.x,y-pt.y);
+          if(d<bd){ bd=d; best={x,y}; }
+        }
+      }
+      return best || pt;
+    }
+    const footprint = Math.max(1, Math.round(size||1));
+    const maxC0 = Math.max(0, F().cols-footprint);
+    const maxR0 = Math.max(0, F().rows-footprint);
+    const c0 = Math.min(maxC0, Math.max(0, Math.round(pt.x/CELL - footprint/2)));
+    const r0 = Math.min(maxR0, Math.max(0, Math.round(pt.y/CELL - footprint/2)));
+    return {x:(c0+footprint/2)*CELL, y:(r0+footprint/2)*CELL};
+  }
+  function placeObject(pt, type){
+    const snapped = nearestCellCenter(pt, 1);
+    const defs = {
+      'token-player': {type:'token-player', color:'#3f6a9c', label:'PJ', size:1, image:null, vision:0, owner:'', hp:null, maxHp:null, conditions:''},
+      'token-monster': {type:'token-monster', color:'#8a2f22', label:'Monstro', size:1, image:null, vision:0, hp:null, maxHp:null, conditions:'', showHpToPlayers:false}
+    };
+    const obj = Object.assign({id:uid(), x:snapped.x, y:snapped.y, locked:false}, defs[type]);
+    F().objects.push(obj);
+    multiSelection.clear();
+    selection = {kind:'object', id:obj.id};
+    tool = 'select';
+    renderAll(); scheduleSave();
+  }
+  function placeOrEditLabel(pt){
+    const txt = prompt('Texto do rótulo:', '');
+    if(txt===null) return;
+    const trimmed = txt.trim();
+    if(!trimmed) return;
+    const snapped = nearestCellCenter(pt, 1);
+    const obj = {id:uid(), type:'label', x:snapped.x, y:snapped.y, label:trimmed, color:'#eee2c2', size:1, locked:false};
+    F().objects.push(obj);
+    multiSelection.clear();
+    selection = {kind:'object', id:obj.id};
+    renderAll(); scheduleSave();
+  }
+  function placeConnector(pt){
+    const txt = prompt('Nome da escada/elevador:', 'Escada');
+    if(txt===null) return;
+    const trimmed = txt.trim() || 'Escada';
+    const snapped = nearestCellCenter(pt, 1);
+    const obj = {id:uid(), type:'connector', x:snapped.x, y:snapped.y, label:trimmed, color:'#8a5fb0', locked:false, targetFloorId:null, linkedConnectorId:null};
+    F().objects.push(obj);
+    multiSelection.clear();
+    selection = {kind:'object', id:obj.id};
+    tool = 'select';
+    renderAll(); scheduleSave();
+  }
+  function placeProp(pt){
+    const snapped = nearestCellCenter(pt, 1);
+    const info = PROP_KIND_ICONS[currentPropKind];
+    const obj = {id:uid(), type:'prop', kind:currentPropKind, x:snapped.x, y:snapped.y, label:info.label, color:'#c9a35a', size:1, image:null, blocking:false, locked:false};
+    if(currentPropKind==='chest'){ obj.open=false; obj.items=[]; obj.playerLocked=false; }
+    if(currentPropKind==='torch'){ obj.lit=true; obj.lightRadius=4; obj.lightColor='#ffb04a'; }
+    if(currentPropKind==='campfire'){ obj.lit=true; obj.lightRadius=6; obj.lightColor='#ff8a3d'; }
+    F().objects.push(obj);
+    multiSelection.clear();
+    selection = {kind:'object', id:obj.id};
+    tool = 'select';
+    renderAll(); scheduleSave();
+  }
+  function placeLight(pt){
+    const snapped = nearestCellCenter(pt, 1);
+    const obj = {id:uid(), type:'light', x:snapped.x, y:snapped.y, label:'Luz', color:'#f5b84a', radius:6, size:1, locked:false, on:true, hideIcon:false};
+    F().objects.push(obj);
+    multiSelection.clear();
+    selection = {kind:'object', id:obj.id};
+    tool = 'select';
+    renderAll(); scheduleSave();
+  }
+  // Scatters several random vegetation props inside a pixel rectangle — this is what makes
+  // the "vegetation brush" feel organic instead of a rigid grid of identical trees.
+  function scatterVegetation(x0,y0,x1,y1){
+    const xMin=Math.min(x0,x1), xMax=Math.max(x0,x1), yMin=Math.min(y0,y1), yMax=Math.max(y0,y1);
+    const areaCells = Math.max(1, ((xMax-xMin)*(yMax-yMin))/(CELL*CELL));
+    const density = parseInt(document.getElementById('vegDensity').value)||5;
+    const count = Math.max(1, Math.round(areaCells * (density/2.2)));
+    const info = PROP_KIND_ICONS[currentVegKind];
+    for(let i=0;i<count;i++){
+      const x = xMin + Math.random()*(xMax-xMin);
+      const y = yMin + Math.random()*(yMax-yMin);
+      const size = 0.7 + Math.random()*0.5;
+      F().objects.push({id:uid(), type:'prop', kind:currentVegKind, x, y, label:info.label, color:'#c9a35a', size, image:null, blocking:false, locked:false});
+    }
+    renderAll(); scheduleSave();
+  }
+  // Turns a list of clicked anchor points into a smooth SVG path (Catmull-Rom -> cubic
+  // Bezier) instead of straight polyline segments, so roads/rivers curve naturally through
+  // the points instead of looking like fixed, ruler-straight segments.
+  function smoothPathD(points){
+    if(!points || points.length<2) return '';
+    if(points.length===2){
+      return `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} L ${points[1].x.toFixed(1)} ${points[1].y.toFixed(1)}`;
+    }
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)} `;
+    for(let i=0;i<points.length-1;i++){
+      const p0 = points[i-1] || points[i];
+      const p1 = points[i];
+      const p2 = points[i+1];
+      const p3 = points[i+2] || p2;
+      const c1x = p1.x + (p2.x-p0.x)/6, c1y = p1.y + (p2.y-p0.y)/6;
+      const c2x = p2.x - (p3.x-p1.x)/6, c2y = p2.y - (p3.y-p1.y)/6;
+      d += `C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+    }
+    return d;
+  }
+  // Player mode only: whether the current browser (identified by myPlayerName) is allowed
+  // to actually drag this token. Selecting/viewing it stays open either way — this only
+  // gates movement, so a GM previewing player mode or an unclaimed token still just works.
+  function canControlToken(o){
+    if(mode!=='player') return true;
+    if(o.type==='token-monster') return false;
+    if(o.type!=='token-player') return true;
+    if(!o.owner || !o.owner.trim()) return true;
+    return !!(myPlayerName.trim() && o.owner.trim().toLowerCase()===myPlayerName.trim().toLowerCase());
+  }
+  // Non-verbal "look here" ping — anyone (GM or player) can tap the board with the Apontar
+  // tool to draw a quick pulsing ring everyone else sees, without typing anything.
+  function pushPing(pt){
+    if(!F().pings) F().pings = [];
+    F().pings = F().pings.filter(p => Date.now()-p.ts < 4000);
+    F().pings.push({id:uid(), x:pt.x, y:pt.y, ts:Date.now(), by: mode==='gm' ? 'Mestre' : (myPlayerName.trim()||'Jogador')});
+    renderBoard(); scheduleSave();
+    setTimeout(()=>{ if(currentMap) renderBoard(); }, 1700);
+  }
+  function renderPings(){
+    if(!F().pings || !F().pings.length) return '';
+    const now = Date.now();
+    let s = '';
+    F().pings.forEach(p=>{
+      const age = now - p.ts;
+      if(age >= 1600) return;
+      s += `<g style="pointer-events:none;">
+        <circle cx="${p.x}" cy="${p.y}" r="4" fill="none" stroke="#c9932f" stroke-width="3">
+          <animate attributeName="r" from="4" to="34" dur="1.5s" begin="0s" fill="freeze"/>
+          <animate attributeName="opacity" from="0.95" to="0" dur="1.5s" begin="0s" fill="freeze"/>
+        </circle>
+        <text x="${p.x}" y="${p.y-38}" text-anchor="middle" fill="#eee2c2" font-size="10" font-family="Inter, sans-serif">${escapeXml(p.by)}</text>
+      </g>`;
+    });
+    return s;
+  }
+  function findObj(id){ return F().objects.find(o=>o.id===id); }
+  function pathAddPoint(pt){
+    const snapped = nearestCellCenter(pt, 1);
+    pathPoints.push(snapped);
+    isDrawingPath = true;
+    renderBoard();
+  }
+  function finishPath(){
+    if(pathPoints.length>=2){
+      const first = pathPoints[0];
+      const obj = {id:uid(), type:'path', kind:pathKind, x:first.x, y:first.y,
+        points: pathPoints.map(p=>({x:p.x,y:p.y})), color:pathColor, width:pathWidth, locked:false};
+      F().objects.push(obj);
+      multiSelection.clear();
+      selection = {kind:'object', id:obj.id};
+    }
+    isDrawingPath = false;
+    pathPoints = [];
+    tool = 'select';
+    renderAll(); scheduleSave();
+  }
+  function cancelPath(){
+    isDrawingPath = false;
+    pathPoints = [];
+    renderBoard();
+  }
+  function removeSelection(){
+    if(multiSelection.size){
+      F().objects = F().objects.filter(o=>!multiSelection.has(o.id));
+      multiSelection.clear(); selection=null;
+      renderAll(); scheduleSave();
+      return;
+    }
+    if(!selection) return;
+    if(selection.kind==='object'){ F().objects = F().objects.filter(o=>o.id!==selection.id); }
+    else if(selection.kind==='edge'){ F().walls.delete(selection.key); }
+    else if(selection.kind==='cell'){ F().cells.delete(selection.key); F().fog.delete(selection.key); }
+    selection=null;
+    renderAll(); scheduleSave();
+  }
+
+  // ================= svg point helper =================
+  const svg = document.getElementById('grid');
+  function svgPoint(evt){
+    const rect = svg.getBoundingClientRect();
+    return { x:(evt.clientX-rect.left)/zoom, y:(evt.clientY-rect.top)/zoom };
+  }
+
+  // ================= render: board =================
+  function boardSize(){
+    if(isHex()){
+      const w = HEX_SIZE*1.5*F().cols + HEX_SIZE*1.5 + 48;
+      const h = HEX_SIZE*Math.sqrt(3)*(F().rows+1) + 48;
+      return {w,h};
+    }
+    return {w:F().cols*CELL+2, h:F().rows*CELL+2};
+  }
+
+  // Live previews (dragging a selection rectangle, moving the ruler, drawing a path...)
+  // fire a LOT of events in quick succession — one per cell crossed, or every few pixels
+  // of mouse movement. Calling the full renderBoard() (which rebuilds the whole SVG and
+  // rebinds every listener) on every single one of those events is what caused the
+  // slowdown once a map had many objects on it. Coalescing them into at most one render
+  // per animation frame keeps things feeling just as live while cutting that cost down
+  // to what the screen can actually show (~60 times a second, not hundreds).
+  let renderScheduled = false;
+  function scheduleRenderBoard(){
+    if(renderScheduled) return;
+    renderScheduled = true;
+    requestAnimationFrame(()=>{ renderScheduled=false; renderBoard(); });
+  }
+  function renderBoard(){
+    const {w,h} = boardSize();
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    svg.setAttribute('width', w);
+    svg.setAttribute('height', h);
+    svg.style.transform = `scale(${zoom})`;
+    const content = document.getElementById('content');
+    let html = '';
+
+    if(isHex()) html += renderHexCells();
+    else html += renderSquareCells();
+
+    const revealedByVision = allVisionRevealedCells();
+    if(!isHex()) html += renderEdges(revealedByVision);
+    html += renderFog(revealedByVision);
+    html += renderVisionRing();
+    html += renderObjects(revealedByVision);
+    html += renderTemplatePreview();
+    html += renderPathPreview();
+    html += renderAreaPreview();
+    html += renderRuler();
+    html += renderPings();
+
+    content.innerHTML = html;
+    bindBoardEvents();
+    document.getElementById('zoomLabel').textContent = Math.round(zoom*100)+'%';
+    updateChestInventoryPanel();
+  }
+
+  // Roughly 2 squares of "reach" — close enough to feel like you walked up to the chest,
+  // without needing to land on the exact same cell.
+  const CHEST_PROXIMITY_PX = CELL*2;
+  // Minecraft-style inventory panel: only meaningful in player mode, and only while a
+  // player token sits near an open chest the GM hasn't locked away from players.
+  function updateChestInventoryPanel(){
+    const panel = document.getElementById('chestInventoryPanel');
+    if(!panel) return;
+    if(mode!=='player'){ panel.style.display='none'; return; }
+    let best=null, bestDist=Infinity;
+    const tokens = F().objects.filter(o=>o.type==='token-player');
+    const chests = F().objects.filter(o=>o.type==='prop' && o.kind==='chest' && o.open && !o.playerLocked);
+    tokens.forEach(tok=>{
+      chests.forEach(chest=>{
+        const d = Math.hypot(chest.x-tok.x, chest.y-tok.y);
+        if(d<=CHEST_PROXIMITY_PX && d<bestDist){ bestDist=d; best=chest; }
+      });
+    });
+    if(!best){ panel.style.display='none'; panel.innerHTML=''; return; }
+    const items = best.items||[];
+    panel.style.display='block';
+    panel.innerHTML = `
+      <div class="chest-inv-title">🧰 ${escapeHtml(best.label||'Baú')}</div>
+      <div class="chest-inv-grid">
+        ${items.length ? items.map(it=>`
+          <div class="chest-inv-slot" title="${escapeHtml(it.name)}">
+            <div class="chest-inv-icon" style="${it.image?`background-image:url(${it.image})`:''}">${it.image?'':'📦'}</div>
+            <div class="chest-inv-qty">${it.qty>1?it.qty:''}</div>
+            <div class="chest-inv-name">${escapeHtml(it.name)}</div>
+          </div>
+        `).join('') : '<p class="muted" style="margin:4px 0;">Vazio.</p>'}
+      </div>
+    `;
+  }
+
+  function renderAreaPreview(){
+    if(!['fill-area','erase-area','vegetation'].includes(tool) || !areaStart || !areaEnd) return '';
+    const r0=Math.min(areaStart.r,areaEnd.r), r1=Math.max(areaStart.r,areaEnd.r);
+    const c0=Math.min(areaStart.c,areaEnd.c), c1=Math.max(areaStart.c,areaEnd.c);
+    const bounds = areaPixelBounds(r0,c0,r1,c1);
+    const x=bounds.x0, y=bounds.y0, w=bounds.x1-bounds.x0, h=bounds.y1-bounds.y0;
+    if(tool==='erase-area'){
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#8a2f22" opacity="0.25" stroke="#e05a3f" stroke-width="2" stroke-dasharray="5,4" style="pointer-events:none"/>`;
+    }
+    if(tool==='vegetation'){
+      return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="#5a9c5f" opacity="0.22" stroke="#7fc98a" stroke-width="2" stroke-dasharray="5,4" style="pointer-events:none"/>`;
+    }
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${currentColor}" opacity="0.35" stroke="#c9932f" stroke-width="2" stroke-dasharray="5,4" style="pointer-events:none"/>`;
+  }
+  // Live preview of a road/river being drawn point-by-point, including a rubber-band
+  // segment following the cursor to the next likely point.
+  function renderPathPreview(){
+    if(tool!=='path' || !isDrawingPath || pathPoints.length<1) return '';
+    const livePts = pathCursor ? [...pathPoints, pathCursor] : pathPoints;
+    const d = smoothPathD(livePts);
+    const isRiver = pathKind==='river';
+    let s = `<path d="${d}" fill="none" stroke="${pathColor}" stroke-width="${pathWidth}" stroke-linecap="round" stroke-linejoin="round" opacity="${isRiver?0.5:0.65}" style="pointer-events:none"/>`;
+    pathPoints.forEach(p=> s += `<circle cx="${p.x}" cy="${p.y}" r="4" fill="#eee2c2" style="pointer-events:none"/>`);
+    return s;
+  }
+
+  // A dashed line + distance label; shown live while dragging a token or using the Régua
+  // tool, and cleared the instant the mouse is released.
+  function renderRulerSegment(start, end, color){
+    if(!start || !end) return '';
+    const dist = Math.hypot(end.x-start.x, end.y-start.y);
+    if(dist<4) return '';
+    const label = distanceLabel(dist);
+    const mx=(start.x+end.x)/2, my=(start.y+end.y)/2;
+    return `<g style="pointer-events:none">
+      <line x1="${start.x}" y1="${start.y}" x2="${end.x}" y2="${end.y}" stroke="${color}" stroke-width="2" stroke-dasharray="6,4"/>
+      <circle cx="${start.x}" cy="${start.y}" r="3.5" fill="${color}"/>
+      <circle cx="${end.x}" cy="${end.y}" r="3.5" fill="${color}"/>
+      <rect x="${mx-30}" y="${my-20}" width="60" height="18" fill="#0f0b06" opacity="0.9"/>
+      <text x="${mx}" y="${my-7}" fill="${color}" font-size="11.5" text-anchor="middle" font-family="Inter, sans-serif" font-weight="600">${label}</text>
+    </g>`;
+  }
+  function renderRuler(){
+    let s = '';
+    if(dragObj && dragObjStart){
+      const o = findObj(dragObj);
+      if(o) s += renderRulerSegment(dragObjStart, {x:o.x,y:o.y}, '#c9932f');
+    }
+    if(tool==='ruler' && isMeasuring && rulerStart && rulerEnd){
+      s += renderRulerSegment(rulerStart, rulerEnd, '#7fb8a6');
+    }
+    return s;
+  }
+
+  // ================= area-of-effect shapes (spell templates) =================
+  // Converts an {x,y origin} + {tx,ty target} pair into plain SVG geometry for one of the
+  // five supported shapes. Kept separate from rendering so the same math drives both the
+  // live drag preview and the final placed template.
+  function templateGeometry(o){
+    const dx = o.tx-o.x, dy = o.ty-o.y;
+    const dist = Math.max(6, Math.hypot(dx,dy));
+    const ang = Math.atan2(dy,dx);
+    if(o.shape==='circle'){
+      return {kind:'circle', cx:o.x, cy:o.y, r:dist};
+    }
+    if(o.shape==='square'){
+      const side = Math.max(Math.abs(dx), Math.abs(dy), 8);
+      const x1 = o.x + (dx<0 ? -side : side), y1 = o.y + (dy<0 ? -side : side);
+      return {kind:'rect', x:Math.min(o.x,x1), y:Math.min(o.y,y1), w:side, h:side};
+    }
+    if(o.shape==='rect'){
+      const w = Math.max(Math.abs(dx),8), h = Math.max(Math.abs(dy),8);
+      return {kind:'rect', x:Math.min(o.x,o.tx), y:Math.min(o.y,o.ty), w, h};
+    }
+    // cone: a wide 90° wedge (45° each side of the aim line) — the classic D&D cone.
+    // triangle: a narrower 40° wedge — a distinct pointed wedge shape for the same drag gesture.
+    const half = o.shape==='cone' ? Math.PI/4 : Math.PI/9;
+    const p1 = {x:o.x, y:o.y};
+    const p2 = {x:o.x+dist*Math.cos(ang-half), y:o.y+dist*Math.sin(ang-half)};
+    const p3 = {x:o.x+dist*Math.cos(ang+half), y:o.y+dist*Math.sin(ang+half)};
+    return {kind:'polygon', pts:[p1,p2,p3]};
+  }
+  function templateShapeLabel(shape){
+    return {circle:'Círculo', cone:'Cone', rect:'Retângulo', square:'Quadrado', triangle:'Triângulo'}[shape] || shape;
+  }
+  function renderTemplateShape(o, selected){
+    const geo = templateGeometry(o);
+    const color = o.color || '#7fb8a6';
+    const fillAttr = o.filled ? `fill="${color}" fill-opacity="0.30"` : `fill="none"`;
+    // pointer-events="all" is important here: an unfilled shape (fill="none") would
+    // otherwise only be clickable exactly on its stroke line, making it very hard to
+    // select/drag a big empty circle or cone by clicking inside it.
+    const strokeAttr = `stroke="${color}" stroke-width="${selected?3:2.2}" ${selected?'stroke-dasharray="6,3"':''} pointer-events="all"`;
+    let shape='';
+    if(geo.kind==='circle') shape = `<circle cx="${geo.cx.toFixed(1)}" cy="${geo.cy.toFixed(1)}" r="${geo.r.toFixed(1)}" ${fillAttr} ${strokeAttr}/>`;
+    else if(geo.kind==='rect') shape = `<rect x="${geo.x.toFixed(1)}" y="${geo.y.toFixed(1)}" width="${geo.w.toFixed(1)}" height="${geo.h.toFixed(1)}" ${fillAttr} ${strokeAttr}/>`;
+    else shape = `<polygon points="${geo.pts.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}" ${fillAttr} ${strokeAttr}/>`;
+    let label = '';
+    if(geo.kind==='circle') label = distanceLabel(geo.r)+' raio';
+    else if(geo.kind==='rect') label = distanceLabel(geo.w)+' × '+distanceLabel(geo.h);
+    else label = distanceLabel(Math.hypot(o.tx-o.x, o.ty-o.y));
+    return `${o.id ? `<g class="obj-icon" data-role="object" data-id="${o.id}">` : '<g style="pointer-events:none">'}
+      ${shape}
+      <circle cx="${o.x}" cy="${o.y}" r="3" fill="${color}"/>
+      <text x="${o.x}" y="${o.y-9}" fill="${color}" font-size="10" text-anchor="middle" font-family="Inter, sans-serif" style="pointer-events:none;">${label}</text>
+      ${o.locked ? `<text x="${o.x+10}" y="${o.y-9}" font-size="11">🔒</text>` : ''}
+    </g>`;
+  }
+  // Live preview while dragging out a new template — disappears once placed (becomes a real object).
+  function renderTemplatePreview(){
+    if(tool!=='template' || !isPlacingTemplate || !templateOrigin || !templateCursor) return '';
+    const ghost = {x:templateOrigin.x, y:templateOrigin.y, tx:templateCursor.x, ty:templateCursor.y, shape:templateShape, filled:templateFilled, color:templateColor, id:null};
+    return renderTemplateShape(ghost, false);
+  }
+  function renderTemplateOptions(){
+    const panel = document.getElementById('templateOptions');
+    if(!panel) return;
+    panel.style.display = tool==='template' ? 'block' : 'none';
+    if(tool!=='template') return;
+    document.querySelectorAll('#templateShapeGrid [data-shape]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.shape===templateShape);
+    });
+    document.getElementById('templateFilledToggle').checked = templateFilled;
+    document.getElementById('templateColorPicker').value = templateColor;
+  }
+  function buildKindGrid(gridId, kinds, dataAttr, onPick){
+    const grid = document.getElementById(gridId);
+    grid.innerHTML = kinds.map(k=>{
+      const info = PROP_KIND_ICONS[k];
+      return `<button class="tool-btn" data-${dataAttr}="${k}" style="margin-bottom:0;flex-direction:column;gap:2px;padding:6px 2px;" title="${info.label}"><span style="font-size:15px;">${info.icon}</span></button>`;
+    }).join('');
+    grid.querySelectorAll(`[data-${dataAttr}]`).forEach(b=>{
+      b.addEventListener('click', ()=>{ onPick(b.dataset[dataAttr]); renderToolInfo(); });
+    });
+  }
+  function renderPropOptions(){
+    const panel = document.getElementById('propOptions');
+    if(!panel) return;
+    panel.style.display = tool==='prop' ? 'block' : 'none';
+    if(tool!=='prop') return;
+    document.querySelectorAll('#propKindGrid [data-propkind]').forEach(b=> b.classList.toggle('active', b.dataset.propkind===currentPropKind));
+  }
+  function renderVegOptions(){
+    const panel = document.getElementById('vegOptions');
+    if(!panel) return;
+    panel.style.display = tool==='vegetation' ? 'block' : 'none';
+    if(tool!=='vegetation') return;
+    document.querySelectorAll('#vegKindGrid [data-vegkind]').forEach(b=> b.classList.toggle('active', b.dataset.vegkind===currentVegKind));
+  }
+  function renderPathOptions(){
+    const panel = document.getElementById('pathOptions');
+    if(!panel) return;
+    panel.style.display = tool==='path' ? 'block' : 'none';
+    if(tool!=='path') return;
+    document.querySelectorAll('#pathOptions [data-pathkind]').forEach(b=> b.classList.toggle('active', b.dataset.pathkind===pathKind));
+    document.getElementById('pathColorPicker').value = pathColor;
+    document.getElementById('pathWidth').value = pathWidth;
+    document.getElementById('btnPathFinish').style.display = isDrawingPath ? 'block' : 'none';
+  }
+
+  // Faint dashed ring shown around a selected token or light that has a radius set, so the
+  // GM can see at a glance how far it currently reveals.
+  function renderVisionRing(){
+    if(!selection || selection.kind!=='object') return '';
+    const o = findObj(selection.id);
+    if(!o) return '';
+    if(o.type==='light' && o.radius>0){
+      const radiusPx = metersToPx(o.radius)*(o.size||1);
+      return `<circle cx="${o.x}" cy="${o.y}" r="${radiusPx}" fill="${o.color||'#f5b84a'}" fill-opacity="0.06" stroke="${o.color||'#f5b84a'}" stroke-opacity="0.5" stroke-width="1.5" stroke-dasharray="4,4" style="pointer-events:none"/>`;
+    }
+    if((o.type==='token-player' || o.type==='token-monster') && o.vision){
+      const radiusPx = effectiveVisionRadiusPx(o);
+      return `<circle cx="${o.x}" cy="${o.y}" r="${radiusPx}" fill="#eee2c2" fill-opacity="0.05" stroke="#eee2c2" stroke-opacity="0.4" stroke-width="1.5" stroke-dasharray="4,4" style="pointer-events:none"/>`;
+    }
+    return '';
+  }
+
+  function renderSquareCells(){
+    let s='';
+    for(let r=0;r<F().rows;r++){
+      for(let c=0;c<F().cols;c++){
+        const k=r+','+c;
+        const cell = F().cells.get(k);
+        const fill = cell ? cell.color : 'transparent';
+        s += `<rect data-role="cell" data-r="${r}" data-c="${c}" x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}" fill="${fill}" stroke="#3a2c1a" stroke-width="0.5"/>`;
+      }
+    }
+    return `<g>${s}</g>`;
+  }
+  function renderHexCells(){
+    let s='';
+    for(let r=0;r<F().rows;r++){
+      for(let c=0;c<F().cols;c++){
+        const k=r+','+c;
+        const cell = F().cells.get(k);
+        const fill = cell ? cell.color : '#1a140c';
+        const {x,y} = hexCenter(c,r);
+        s += `<polygon data-role="cell" data-r="${r}" data-c="${c}" points="${hexPoints(x,y)}" fill="${fill}" stroke="#3a2c1a" stroke-width="0.7"/>`;
+      }
+    }
+    return `<g>${s}</g>`;
+  }
+  function renderEdges(revealed){
+    function cellVisible(r,c){
+      if(r<0||r>=F().rows||c<0||c>=F().cols) return false;
+      const k=r+','+c;
+      return !F().fog.has(k) || (revealed && revealed.has(k));
+    }
+    let s='';
+    for(let r=0;r<=F().rows;r++){
+      for(let c=0;c<F().cols;c++){
+        const key = `H:${r}:${c}`;
+        if(!edgeUsable(key)) continue;
+        const w = F().walls.get(key);
+        // an edge only makes its wall/door color visible to players once at least one
+        // of the two cells it borders has actually been seen — otherwise its color
+        // would give away the shape of a room nobody has explored yet
+        const hiddenFromPlayer = mode==='player' && !(cellVisible(r-1,c) || cellVisible(r,c));
+        const stroke = (w && !hiddenFromPlayer) ? (w.color || (w.kind==='wall' ? '#17110a' : '#c9932f')) : 'transparent';
+        const dash = w && w.kind==='door' ? 'stroke-dasharray="6,4"' : '';
+        const nonBlockingHint = (w && w.blocking===false && mode==='gm') ? 'opacity="0.5"' : '';
+        s += `<line data-role="edge" data-key="${key}" x1="${c*CELL}" y1="${r*CELL}" x2="${(c+1)*CELL}" y2="${r*CELL}" stroke="${stroke}" stroke-width="4" ${dash} ${nonBlockingHint} stroke-linecap="square"/>`;
+        s += `<rect data-role="edgehit" data-key="${key}" x="${c*CELL}" y="${r*CELL-EDGE_T/2}" width="${CELL}" height="${EDGE_T}" fill="transparent"/>`;
+      }
+    }
+    for(let r=0;r<F().rows;r++){
+      for(let c=0;c<=F().cols;c++){
+        const key = `V:${r}:${c}`;
+        if(!edgeUsable(key)) continue;
+        const w = F().walls.get(key);
+        const hiddenFromPlayer = mode==='player' && !(cellVisible(r,c-1) || cellVisible(r,c));
+        const stroke = (w && !hiddenFromPlayer) ? (w.color || (w.kind==='wall' ? '#17110a' : '#c9932f')) : 'transparent';
+        const dash = w && w.kind==='door' ? 'stroke-dasharray="6,4"' : '';
+        const nonBlockingHint = (w && w.blocking===false && mode==='gm') ? 'opacity="0.5"' : '';
+        s += `<line data-role="edge" data-key="${key}" x1="${c*CELL}" y1="${r*CELL}" x2="${c*CELL}" y2="${(r+1)*CELL}" stroke="${stroke}" stroke-width="4" ${dash} ${nonBlockingHint} stroke-linecap="square"/>`;
+        s += `<rect data-role="edgehit" data-key="${key}" x="${c*CELL-EDGE_T/2}" y="${r*CELL}" width="${EDGE_T}" height="${CELL}" fill="transparent"/>`;
+      }
+    }
+    return `<g>${s}</g>`;
+  }
+  function renderFog(revealed){
+    let s='';
+    F().fog.forEach(k=>{
+      const [r,c] = k.split(',').map(Number);
+      let shape;
+      if(isHex()){
+        const {x,y} = hexCenter(c,r);
+        shape = `<polygon points="${hexPoints(x,y)}" />`;
+      } else {
+        shape = `<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}"/>`;
+      }
+      const seenNow = revealed && revealed.has(k);
+      if(mode==='player'){
+        if(seenNow) return; // inside a player token's current line of sight — fully clear, no fog drawn
+        s += shape.replace('/>', ' fill="#0a0705"/>');
+      } else {
+        // GM mode always shows the manual fog, but cells currently lit by a token's vision
+        // get a lighter tint so the GM can see at a glance what players can see right now.
+        s += shape.replace('/>', seenNow ? ' fill="#0a0705" opacity="0.22"/>' : ' fill="#0a0705" opacity="0.55"/>');
+      }
+    });
+    // pointer-events:none is critical: the fog layer is purely visual and sits above the
+    // cell layer, so without this, clicks on a fogged cell would hit the fog shape instead
+    // of the cell underneath, making it impossible to paint/erase/reveal that cell again.
+    return `<g data-role="fog" style="pointer-events:none">${s}</g>`;
+  }
+  function renderChestItems(o){
+    const el = document.getElementById('inspChestItems');
+    if(!el) return;
+    if(!o.items || !o.items.length){ el.innerHTML = '<p class="muted" style="margin:4px 0;">Vazio.</p>'; return; }
+    el.innerHTML = o.items.map(it=>`
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;font-size:12px;">
+        <div data-item-thumb="${it.id}" title="Clique pra dar uma imagem a este item" style="width:26px;height:26px;flex-shrink:0;border:1px solid var(--border);background:${it.image?`url(${it.image}) center/cover`:'var(--panel-2)'};display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;">${it.image?'':'🖼️'}</div>
+        <input type="file" accept="image/*" data-item-file="${it.id}" style="display:none;">
+        <span style="flex:1;">${escapeHtml(it.name)}</span>
+        <input type="text" data-item-qty="${it.id}" value="${it.qty}" style="width:40px;text-align:center;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);">
+        <button class="coach-skip" data-item-remove="${it.id}" style="padding:2px 5px;">✕</button>
+      </div>
+    `).join('');
+    el.querySelectorAll('[data-item-qty]').forEach(inp=>{
+      inp.addEventListener('change', e=>{
+        const item = o.items.find(i=>i.id===e.target.dataset.itemQty);
+        if(item){ item.qty = Math.max(0, parseInt(e.target.value)||0); scheduleSave(); }
+      });
+    });
+    el.querySelectorAll('[data-item-remove]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        o.items = o.items.filter(i=>i.id!==b.dataset.itemRemove);
+        renderChestItems(o); scheduleSave();
+      });
+    });
+    // clicking a thumbnail opens the matching hidden file input — keeps each item's picker
+    // out of the way until the GM actually wants to set an image
+    el.querySelectorAll('[data-item-thumb]').forEach(thumb=>{
+      thumb.addEventListener('click', ()=>{
+        const fileInp = el.querySelector(`[data-item-file="${thumb.dataset.itemThumb}"]`);
+        if(fileInp) fileInp.click();
+      });
+    });
+    el.querySelectorAll('[data-item-file]').forEach(inp=>{
+      inp.addEventListener('change', async e=>{
+        const file = e.target.files && e.target.files[0];
+        if(!file) return;
+        const item = o.items.find(i=>i.id===e.target.dataset.itemFile);
+        if(!item) return;
+        try{ item.image = await compressImageFile(file, 96); renderChestItems(o); scheduleSave(); }
+        catch(err){ alert('Não foi possível carregar essa imagem.'); }
+      });
+    });
+  }
+  function ringRadiusFor(o){
+    if(o.type==='label') return 14*(o.size||1);
+    if(o.type==='prop') return (14*(o.size||1))+4;
+    if(o.type==='light') return (11*(o.size||1))+4;
+    if(o.type==='connector') return 19;
+    return 18*(o.size||1);
+  }
+  function renderObjects(revealed){
+    let s='';
+    const selIds = new Set(multiSelection);
+    if(selection && selection.kind==='object') selIds.add(selection.id);
+    const isVisible = o=>{
+      if(mode!=='player') return true;
+      const key = cellKeyForPoint(o.x,o.y);
+      return !(key && F().fog.has(key) && !(revealed && revealed.has(key)));
+    };
+    // paths (roads/rivers) render first — ground-level texture, below everything else
+    F().objects.forEach(o=>{
+      if(o.type!=='path' || !isVisible(o)) return;
+      const d = smoothPathD(o.points||[]);
+      const isRiver = o.kind==='river';
+      s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+        <path d="${d}" fill="none" stroke="${o.color||(isRiver?'#3f7ab0':'#8a6a45')}" stroke-width="${o.width||12}" stroke-linecap="round" stroke-linejoin="round" opacity="${isRiver?0.72:0.92}"/>
+        ${selIds.has(o.id) ? `<path d="${d}" fill="none" stroke="#c9932f" stroke-width="2" stroke-dasharray="4,4" opacity="0.9"/>` : ''}
+      </g>`;
+    });
+    // templates render next so tokens/labels always sit visually on top of AoE shapes
+    F().objects.forEach(o=>{
+      if(o.type!=='template' || !isVisible(o)) return;
+      s += renderTemplateShape(o, selIds.has(o.id));
+    });
+    F().objects.forEach(o=>{
+      if(o.type==='template' || o.type==='path' || !isVisible(o)) return;
+      if(o.type==='prop'){
+        const info = PROP_KIND_ICONS[o.kind] || {icon:'❔',label:'Objeto'};
+        const rad = 14*(o.size||1);
+        const vector = o.kind==='chest' && o.open ? PROP_VECTOR_ICONS['chest-open'] : PROP_VECTOR_ICONS[o.kind];
+        const scale = rad/12;
+        let iconMarkup;
+        if(o.image){
+          const clipId = 'clip-'+o.id;
+          iconMarkup = `<clipPath id="${clipId}"><circle cx="${o.x}" cy="${o.y}" r="${rad}"/></clipPath>
+            <image href="${o.image}" x="${o.x-rad}" y="${o.y-rad}" width="${rad*2}" height="${rad*2}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>`;
+        } else if(vector){
+          iconMarkup = `<g transform="translate(${o.x},${o.y}) scale(${scale.toFixed(3)})" style="pointer-events:none;">${vector}</g>`;
+        } else {
+          iconMarkup = `<text x="${o.x}" y="${o.y+rad*0.4}" text-anchor="middle" font-size="${rad*1.7}" style="pointer-events:none;">${info.icon}</text>`;
+        }
+        // torch/campfire double as light sources now — draw a soft glow behind the icon
+        // while lit so it's obvious at a glance which scenery is actually shedding light
+        const isLightProp = (o.kind==='torch'||o.kind==='campfire');
+        // the glow now tracks the actual configured range (in meters, same unit as the
+        // fog reveal), not just the icon's own size — so dragging "Alcance" up visibly
+        // grows the glow instead of it staying the same size no matter what you set
+        const glowRadPx = isLightProp ? Math.max(rad*1.6, metersToPx(o.lightRadius!=null?o.lightRadius:(o.kind==='campfire'?6:4))*0.6) : 0;
+        const glow = (isLightProp && o.lit!==false) ? `<circle cx="${o.x}" cy="${o.y}" r="${glowRadPx}" fill="${o.lightColor||'#ffb04a'}" fill-opacity="0.22" style="pointer-events:none;"/>` : '';
+        s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+          <circle cx="${o.x}" cy="${o.y}" r="${rad+2}" fill="transparent"/>
+          ${glow}
+          ${o.blocking ? `<circle cx="${o.x}" cy="${o.y}" r="${rad+3}" fill="none" stroke="#e0574a" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>` : ''}
+          ${(vector||o.image) ? '' : `<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="#0f0b06" opacity="0.35"/>`}
+          ${iconMarkup}
+          ${isLightProp && o.lit===false && mode==='gm' ? `<text x="${o.x-rad}" y="${o.y-rad}" font-size="11" title="Apagada">🚫</text>` : ''}
+          ${o.kind==='chest' && o.playerLocked && mode==='gm' ? `<text x="${o.x-rad}" y="${o.y-rad}" font-size="11" title="Bloqueado para jogadores">🔐</text>` : ''}
+          ${o.locked ? `<text x="${o.x+rad}" y="${o.y-rad}" font-size="11">🔒</text>` : ''}
+        </g>`;
+        return;
+      }
+      if(o.type==='light'){
+        const rad = 11*(o.size||1);
+        const isOn = o.on!==false;
+        const hideIconFromPlayer = o.hideIcon && mode==='player';
+        s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+          ${isOn ? `<circle cx="${o.x}" cy="${o.y}" r="${rad*2.2}" fill="${o.color||'#f5b84a'}" fill-opacity="0.18" style="pointer-events:none;"/>` : ''}
+          ${hideIconFromPlayer ? '' : `<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="${isOn?(o.color||'#f5b84a'):'#3a3226'}" stroke="#fff6dd" stroke-width="1.5" opacity="${isOn?1:0.6}"/>
+          <text x="${o.x}" y="${o.y+rad*0.45}" text-anchor="middle" font-size="${rad*1.3}" style="pointer-events:none;">💡</text>`}
+          ${!isOn && mode==='gm' ? `<text x="${o.x-rad}" y="${o.y-rad}" font-size="11" title="Apagada">🚫</text>` : ''}
+          ${o.locked ? `<text x="${o.x+rad}" y="${o.y-rad}" font-size="11">🔒</text>` : ''}
+        </g>`;
+        return;
+      }
+      if(o.type==='connector'){
+        const rad = 15;
+        const hasTarget = !!o.targetFloorId;
+        s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+          <rect x="${o.x-rad}" y="${o.y-rad}" width="${rad*2}" height="${rad*2}" transform="rotate(45 ${o.x} ${o.y})" fill="${o.color||'#8a5fb0'}" fill-opacity="${hasTarget?0.9:0.45}" stroke="#eee2c2" stroke-width="2"/>
+          <text x="${o.x}" y="${o.y+5}" text-anchor="middle" font-size="14" style="pointer-events:none;">🪜</text>
+          <rect x="${o.x-(o.label.length*3.2+6)}" y="${o.y+rad+3}" width="${o.label.length*6.4+12}" height="15" fill="#0f0b06" opacity="0.75"/>
+          <text x="${o.x}" y="${o.y+rad+14}" text-anchor="middle" fill="#eee2c2" font-size="10.5" font-family="Inter, sans-serif">${escapeXml(o.label)}</text>
+          ${!hasTarget ? `<text x="${o.x+rad-2}" y="${o.y-rad+4}" font-size="12" title="Sem destino definido">⚠</text>` : ''}
+          ${o.locked ? `<text x="${o.x+rad}" y="${o.y-rad}" font-size="11">🔒</text>` : ''}
+        </g>`;
+        return;
+      }
+      if(o.type==='label'){
+        const text = escapeXml(o.label);
+        const fs = 12*(o.size||1);
+        const bgW = text.length*fs*0.56+10;
+        const bgH = fs+7;
+        s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+          <rect x="${o.x-5}" y="${o.y-fs-1}" width="${bgW}" height="${bgH}" fill="#0f0b06" opacity="0.75"/>
+          <text x="${o.x}" y="${o.y}" fill="${o.color||'#eee2c2'}" font-size="${fs}" font-family="Inter, sans-serif">${text}</text>
+          ${o.locked ? `<text x="${o.x+bgW-8}" y="${o.y-fs}" font-size="11">🔒</text>` : ''}
+        </g>`;
+      } else if(o.type==='token-player' || o.type==='token-monster'){
+        const rad = 16*(o.size||1);
+        const abbr = escapeXml((o.label||'').slice(0,2).toUpperCase());
+        let shape;
+        if(o.image){
+          const clipId = 'clip-'+o.id;
+          const clipShape = o.type==='token-player'
+            ? `<circle cx="${o.x}" cy="${o.y}" r="${rad}"/>`
+            : `<rect x="${o.x-rad*0.85}" y="${o.y-rad*0.85}" width="${rad*1.7}" height="${rad*1.7}" transform="rotate(45 ${o.x} ${o.y})"/>`;
+          const ringShape = o.type==='token-player'
+            ? `<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="none" stroke="${o.color}" stroke-width="2.5"/>`
+            : `<rect x="${o.x-rad*0.85}" y="${o.y-rad*0.85}" width="${rad*1.7}" height="${rad*1.7}" transform="rotate(45 ${o.x} ${o.y})" fill="none" stroke="${o.color}" stroke-width="2.5"/>`;
+          shape = `<clipPath id="${clipId}">${clipShape}</clipPath>
+            <image href="${o.image}" x="${o.x-rad}" y="${o.y-rad}" width="${rad*2}" height="${rad*2}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>
+            ${ringShape}`;
+        } else {
+          shape = o.type==='token-player'
+            ? `<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="${o.color}" stroke="#eee2c2" stroke-width="2"/>`
+            : `<rect x="${o.x-rad*0.85}" y="${o.y-rad*0.85}" width="${rad*1.7}" height="${rad*1.7}" transform="rotate(45 ${o.x} ${o.y})" fill="${o.color}" stroke="#eee2c2" stroke-width="2"/>`;
+        }
+        const nameLabel = (o.showName!==false && o.label) ? (()=>{
+          const text = escapeXml(o.label);
+          const w = text.length*5.6+8;
+          return `<rect x="${o.x-w/2}" y="${o.y+rad+3}" width="${w}" height="14" fill="#0f0b06" opacity="0.78"/>
+            <text x="${o.x}" y="${o.y+rad+13}" text-anchor="middle" fill="#eee2c2" font-size="10" font-family="Inter, sans-serif" style="pointer-events:none;">${text}</text>`;
+        })() : '';
+        // HP bar — always shown for a player's own character; for monsters, only shown to
+        // the GM unless the GM explicitly opted to reveal it to the table
+        const hpVisible = o.maxHp>0 && (o.type==='token-player' || mode==='gm' || o.showHpToPlayers);
+        const hpLabelOffset = (o.showName!==false && o.label) ? 18 : 4;
+        const hpBar = hpVisible ? (()=>{
+          const pct = Math.max(0, Math.min(1, (o.hp==null?o.maxHp:o.hp)/o.maxHp));
+          const barW = rad*2.1, barH = 4.2;
+          const barColor = pct>0.5 ? '#4f8a4a' : (pct>0.2 ? '#c9932f' : '#8a2f22');
+          return `<rect x="${o.x-barW/2}" y="${o.y+rad+hpLabelOffset}" width="${barW}" height="${barH}" fill="#0f0b06" opacity="0.85"/>
+            <rect x="${o.x-barW/2}" y="${o.y+rad+hpLabelOffset}" width="${barW*pct}" height="${barH}" fill="${barColor}"/>`;
+        })() : '';
+        // condition badges — small colored dots with the first couple letters, stacked above
+        // the token so a glance at the board tells you who's poisoned/prone/etc.
+        const condList = (o.conditions||'').split(',').map(c=>c.trim()).filter(Boolean);
+        const condBadges = condList.length ? condList.slice(0,4).map((c,i)=>{
+          const bx = o.x - rad - 2 + i*11;
+          return `<circle cx="${bx}" cy="${o.y-rad-6}" r="6.5" fill="#5a2a52" stroke="#eee2c2" stroke-width="1"/>
+            <text x="${bx}" y="${o.y-rad-3}" text-anchor="middle" font-size="7" fill="#eee2c2" style="pointer-events:none;">${escapeXml(c.slice(0,2))}</text>`;
+        }).join('') : '';
+        s += `<g class="obj-icon" data-role="object" data-id="${o.id}">
+          ${shape}
+          ${!o.image ? `<text x="${o.x}" y="${o.y+4}" fill="#eee2c2" font-size="10" text-anchor="middle" font-family="Inter, sans-serif" style="pointer-events:none;">${abbr}</text>` : ''}
+          ${nameLabel}
+          ${hpBar}
+          ${condBadges}
+          ${o.locked ? `<text x="${o.x+rad}" y="${o.y-rad}" font-size="11">🔒</text>` : ''}
+        </g>`;
+      }
+    });
+    // selection highlight (single) — templates and paths already draw their own selected outline above
+    if(selection && selection.kind==='object'){
+      const o = findObj(selection.id);
+      if(o && o.type!=='template' && o.type!=='path'){ const rad=ringRadiusFor(o); s+=`<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="none" stroke="#c9932f" stroke-width="2" stroke-dasharray="3,3"/>`; }
+    }
+    // selection highlight (group)
+    multiSelection.forEach(id=>{
+      const o = findObj(id);
+      if(o && o.type!=='template' && o.type!=='path'){ const rad=ringRadiusFor(o); s+=`<circle cx="${o.x}" cy="${o.y}" r="${rad}" fill="none" stroke="#3f6a9c" stroke-width="2.5" stroke-dasharray="2,3"/>`; }
+    });
+    if(selection && selection.kind==='cell'){
+      const [r,c] = selection.key.split(',').map(Number);
+      if(isHex()){ const {x,y}=hexCenter(c,r); s+=`<polygon points="${hexPoints(x,y)}" fill="none" stroke="#c9932f" stroke-width="2.5"/>`; }
+      else { s+=`<rect x="${c*CELL}" y="${r*CELL}" width="${CELL}" height="${CELL}" fill="none" stroke="#c9932f" stroke-width="2.5"/>`; }
+    }
+    return `<g>${s}</g>`;
+  }
+  function escapeXml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+  function cellKeyForPoint(x,y){
+    if(isHex()){
+      // approximate nearest hex by scanning (small grids, fine)
+      let best=null, bd=Infinity;
+      for(let r=0;r<F().rows;r++) for(let c=0;c<F().cols;c++){
+        const {x:hx,y:hy} = hexCenter(c,r);
+        const d = Math.hypot(hx-x,hy-y);
+        if(d<bd){bd=d;best=r+','+c;}
+      }
+      return bd < HEX_SIZE ? best : null;
+    }
+    const c = Math.floor(x/CELL), r = Math.floor(y/CELL);
+    if(r<0||c<0||r>=F().rows||c>=F().cols) return null;
+    return r+','+c;
+  }
+
+  // ================= events =================
+  function bindBoardEvents(){
+    svg.querySelectorAll('[data-role="cell"]').forEach(el=>{
+      el.addEventListener('mousedown', e=>{
+        const r=+el.dataset.r, c=+el.dataset.c;
+        if(tool==='ruler'){
+          isMeasuring=true; rulerStart=nearestCellCenter(svgPoint(e),1); rulerEnd=rulerStart; renderBoard();
+        } else if(tool==='template'){
+          isPlacingTemplate=true; templateOrigin=nearestCellCenter(svgPoint(e),1); templateCursor=templateOrigin; renderBoard();
+        } else if(['floor','erase','fog-on','fog-off'].includes(tool)){
+          isPainting=true; paintCellsAlong(r,c); renderBoard();
+        } else if(tool==='fill-area' || tool==='erase-area' || tool==='vegetation'){
+          isPainting=true; areaStart={r,c}; areaEnd={r,c}; renderBoard();
+        } else if(tool==='select'){
+          if(!e.shiftKey){ multiSelection.clear(); }
+          selection = {kind:'cell', key:r+','+c}; renderAll();
+        } else if(tool==='label'){
+          placeOrEditLabel(svgPoint(e));
+        } else if(tool==='token-player' || tool==='token-monster'){
+          placeObject(svgPoint(e), tool);
+        } else if(tool==='connector'){
+          placeConnector(svgPoint(e));
+        } else if(tool==='prop'){
+          placeProp(svgPoint(e));
+        } else if(tool==='light'){
+          placeLight(svgPoint(e));
+        } else if(tool==='path'){
+          if(e.detail>=2) finishPath(); else pathAddPoint(svgPoint(e));
+        } else if(tool==='ping'){
+          pushPing(svgPoint(e));
+        }
+      });
+      el.addEventListener('mouseenter', ()=>{
+        if(isPainting && ['floor','erase','fog-on','fog-off'].includes(tool)){
+          paintCellsAlong(+el.dataset.r, +el.dataset.c); scheduleRenderBoard();
+        } else if(isPainting && (tool==='fill-area' || tool==='erase-area' || tool==='vegetation')){
+          areaEnd = {r:+el.dataset.r, c:+el.dataset.c}; scheduleRenderBoard();
+        }
+      });
+    });
+    svg.querySelectorAll('[data-role="edgehit"]').forEach(el=>{
+      el.addEventListener('mousedown', e=>{
+        if(tool==='ruler'){ isMeasuring=true; rulerStart=nearestCellCenter(svgPoint(e),1); rulerEnd=rulerStart; renderBoard(); }
+        else if(tool==='template'){ isPlacingTemplate=true; templateOrigin=nearestCellCenter(svgPoint(e),1); templateCursor=templateOrigin; renderBoard(); }
+      });
+      el.addEventListener('click', ()=> handleEdgeClick(el.dataset.key));
+    });
+    svg.querySelectorAll('[data-role="object"]').forEach(el=>{
+      el.addEventListener('mousedown', e=>{
+        e.stopPropagation();
+        const o = findObj(el.dataset.id);
+        if(!o) return;
+        // clicking an unlocked, open-able chest also opens/closes it as a convenience —
+        // but always falls through to normal selection below, so it can still be
+        // inspected, edited, or deleted afterwards no matter which mode is active
+        if(mode==='player' && o.type==='prop' && o.kind==='chest' && !o.playerLocked && tool==='select' && !e.shiftKey){
+          o.open=!o.open; scheduleSave();
+        }
+        if(tool==='ruler'){
+          isMeasuring=true; rulerStart=nearestCellCenter(svgPoint(e),1); rulerEnd=rulerStart; renderBoard(); return;
+        }
+        if(tool==='template'){
+          isPlacingTemplate=true; templateOrigin=nearestCellCenter(svgPoint(e),1); templateCursor=templateOrigin; renderBoard(); return;
+        }
+        if(tool==='path'){
+          if(e.detail>=2) finishPath(); else pathAddPoint(svgPoint(e));
+          return;
+        }
+        if(tool==='ping'){ pushPing(svgPoint(e)); return; }
+        if(tool==='prop'){ placeProp(svgPoint(e)); return; }
+        if(tool==='light'){ placeLight(svgPoint(e)); return; }
+        if(tool==='connector'){ placeConnector(svgPoint(e)); return; }
+        if(tool==='token-player' || tool==='token-monster'){ placeObject(svgPoint(e), tool); return; }
+        if(tool==='label'){ placeOrEditLabel(svgPoint(e)); return; }
+        if(tool==='select'){
+          if(e.shiftKey){
+            // shift+click toggles membership in the multi-selection, without dragging
+            if(multiSelection.has(o.id)) multiSelection.delete(o.id); else multiSelection.add(o.id);
+            selection = null;
+            renderAll();
+            return;
+          }
+          if(multiSelection.size>1 && multiSelection.has(o.id)){
+            // dragging one of an existing group selection moves the whole group together
+            const pt = svgPoint(e);
+            dragGroup = {
+              startX: pt.x, startY: pt.y,
+              items: [...multiSelection].map(id=>{ const obj=findObj(id); return {id, x0:obj.x, y0:obj.y, tx0:obj.tx, ty0:obj.ty, points0: obj.points ? obj.points.map(p=>({x:p.x,y:p.y})) : null, locked:obj.locked}; })
+            };
+          } else {
+            multiSelection.clear();
+            selection = {kind:'object', id:o.id};
+            if(!o.locked && canControlToken(o)){ dragObj = o.id; dragObjStart = {x:o.x, y:o.y}; }
+          }
+          renderAll();
+        } else if(tool==='erase'){
+          if(multiSelection.size){
+            F().objects = F().objects.filter(x=>!multiSelection.has(x.id));
+            multiSelection.clear(); selection=null;
+            renderAll(); scheduleSave();
+            return;
+          }
+          F().objects = F().objects.filter(x=>x.id!==o.id);
+          if(selection && selection.id===o.id) selection=null;
+          renderAll(); scheduleSave();
+        }
+      });
+    });
+    // empty-space click for placing tokens/labels not on a cell (hex/square background)
+    svg.addEventListener('mousedown', e=>{
+      if(e.target===svg || e.target.id==='content'){
+        const pt = svgPoint(e);
+        if(tool==='ruler'){ isMeasuring=true; rulerStart=nearestCellCenter(pt,1); rulerEnd=rulerStart; renderBoard(); }
+        else if(tool==='template'){ isPlacingTemplate=true; templateOrigin=nearestCellCenter(pt,1); templateCursor=templateOrigin; renderBoard(); }
+        else if(tool==='label') placeOrEditLabel(pt);
+        else if(tool==='token-player' || tool==='token-monster') placeObject(pt, tool);
+        else if(tool==='connector') placeConnector(pt);
+        else if(tool==='prop') placeProp(pt);
+        else if(tool==='light') placeLight(pt);
+        else if(tool==='path'){ if(e.detail>=2) finishPath(); else pathAddPoint(pt); }
+        else if(tool==='ping'){ pushPing(pt); }
+        else if(tool==='select'){ selection=null; multiSelection.clear(); renderAll(); }
+      }
+    });
+  }
+  function blockingWallSegments(){
+    const segs = [];
+    F().walls.forEach((w,key)=>{
+      if(w.blocking===false) return; // "non-physical" walls/doors never stop tokens
+      const p = key.split(':');
+      if(p[0]==='H'){ const r=+p[1], c=+p[2]; segs.push({x1:c*CELL,y1:r*CELL,x2:(c+1)*CELL,y2:r*CELL}); }
+      else { const r=+p[1], c=+p[2]; segs.push({x1:c*CELL,y1:r*CELL,x2:c*CELL,y2:(r+1)*CELL}); }
+    });
+    return segs;
+  }
+  function blockingPropObstacles(){
+    const obstacles = [];
+    F().objects.forEach(o=>{
+      if(o.type==='prop' && o.blocking) obstacles.push({x:o.x, y:o.y, r: 13*(o.size||1)});
+    });
+    return obstacles;
+  }
+  // Point-to-segment distance test used to see whether a straight movement line passes
+  // through a circular obstacle (a blocking prop) rather than a straight wall segment.
+  function segmentHitsCircle(p1,p2,c,r){
+    const dx=p2.x-p1.x, dy=p2.y-p1.y;
+    const len2 = dx*dx+dy*dy;
+    if(len2===0) return Math.hypot(p1.x-c.x,p1.y-c.y) <= r;
+    let t = ((c.x-p1.x)*dx + (c.y-p1.y)*dy)/len2;
+    t = Math.max(0, Math.min(1, t));
+    const px = p1.x+t*dx, py = p1.y+t*dy;
+    return Math.hypot(px-c.x, py-c.y) <= r;
+  }
+  // Whether a token trying to move in a straight line from (x0,y0) to (x1,y1) would have
+  // to cross a physical wall/door, or a blocking scenery prop, to get there. Used to stop a
+  // token being dragged right through a closed door or a barricade instead of around it.
+  function movementBlocked(x0,y0,x1,y1){
+    const p1={x:x0,y:y0}, p2={x:x1,y:y1};
+    if(!isHex() && lineOfSightBlocked(p1, p2, blockingWallSegments())) return true;
+    return blockingPropObstacles().some(o=> segmentHitsCircle(p1,p2,o,o.r));
+  }
+  svg.addEventListener('mousemove', e=>{
+    if(isMeasuring){
+      rulerEnd = nearestCellCenter(svgPoint(e),1); scheduleRenderBoard(); return;
+    }
+    if(isPlacingTemplate){
+      templateCursor = svgPoint(e); scheduleRenderBoard(); return;
+    }
+    if(isDrawingPath){
+      pathCursor = svgPoint(e); scheduleRenderBoard(); return;
+    }
+    if(dragGroup){
+      const pt = svgPoint(e);
+      const dx = pt.x-dragGroup.startX, dy = pt.y-dragGroup.startY;
+      dragGroup.items.forEach(it=>{
+        if(it.locked) return;
+        const obj = findObj(it.id);
+        if(!obj) return;
+        const targetX = it.x0+dx, targetY = it.y0+dy;
+        if(obj.type==='template'){
+          obj.x = targetX; obj.y = targetY; obj.tx = it.tx0+dx; obj.ty = it.ty0+dy;
+          return;
+        }
+        if(obj.type==='path' && it.points0){
+          obj.x = targetX; obj.y = targetY;
+          obj.points = it.points0.map(p=>({x:p.x+dx, y:p.y+dy}));
+          return;
+        }
+        // a token that's hit a physical wall simply stays put for this frame instead of
+        // passing through — other unblocked members of the group keep moving normally
+        if((obj.type==='token-player'||obj.type==='token-monster') && movementBlocked(obj.x,obj.y,targetX,targetY)) return;
+        obj.x = targetX; obj.y = targetY;
+      });
+      scheduleRenderBoard();
+    } else if(dragObj){
+      const o = findObj(dragObj);
+      if(o){
+        const pt = svgPoint(e);
+        if(o.type==='token-player' || o.type==='token-monster'){
+          if(!movementBlocked(o.x,o.y,pt.x,pt.y)){ o.x=pt.x; o.y=pt.y; }
+        } else {
+          const dx = pt.x-o.x, dy = pt.y-o.y;
+          o.x=pt.x; o.y=pt.y;
+          if(o.type==='template'){ o.tx+=dx; o.ty+=dy; }
+          if(o.type==='path' && o.points){ o.points.forEach(p=>{ p.x+=dx; p.y+=dy; }); }
+        }
+        scheduleRenderBoard();
+      }
+    }
+  });
+  function findConnectorAt(floor, x, y, excludeId){
+    const THRESH = CELL*0.6;
+    return floor.objects.find(o=>o.type==='connector' && o.id!==excludeId && Math.hypot(o.x-x,o.y-y)<=THRESH);
+  }
+  // Called right after a token has been dropped (and snapped) on its original floor.
+  // If it landed on a stairs/elevator that has a destination set, offers to carry it
+  // (and switch the current view) to the linked floor.
+  function offerFloorTravel(tokenObj, sourceFloor){
+    if(!tokenObj || (tokenObj.type!=='token-player' && tokenObj.type!=='token-monster')) return;
+    const conn = findConnectorAt(sourceFloor, tokenObj.x, tokenObj.y);
+    if(!conn || !conn.targetFloorId) return;
+    const targetFloor = currentMap.floors.find(f=>f.id===conn.targetFloorId);
+    if(!targetFloor) return;
+    const targetIdx = currentMap.floors.indexOf(targetFloor);
+    const ok = confirm(`Levar "${tokenObj.label||'token'}" para o andar "${targetFloor.name}" via "${conn.label}"?`);
+    if(!ok) return;
+    sourceFloor.objects = sourceFloor.objects.filter(o=>o.id!==tokenObj.id);
+    let landX = conn.x, landY = conn.y;
+    if(conn.linkedConnectorId){
+      const landingConn = targetFloor.objects.find(o=>o.id===conn.linkedConnectorId);
+      if(landingConn){ landX=landingConn.x; landY=landingConn.y; }
+    }
+    tokenObj.x = landX; tokenObj.y = landY;
+    targetFloor.objects.push(tokenObj);
+    currentMap.currentFloorIndex = targetIdx;
+    multiSelection.clear();
+    selection = {kind:'object', id:tokenObj.id};
+  }
+  window.addEventListener('mouseup', ()=>{
+    if(isMeasuring){ isMeasuring=false; rulerStart=null; rulerEnd=null; renderBoard(); }
+    if(isPlacingTemplate){
+      isPlacingTemplate=false;
+      if(templateOrigin && templateCursor && Math.hypot(templateCursor.x-templateOrigin.x, templateCursor.y-templateOrigin.y) > 5){
+        const snappedTarget = nearestCellCenter(templateCursor,1);
+        const obj = {
+          id:uid(), type:'template', shape:templateShape,
+          x:templateOrigin.x, y:templateOrigin.y,
+          tx:snappedTarget.x, ty:snappedTarget.y,
+          color:templateColor, filled:templateFilled, locked:false
+        };
+        F().objects.push(obj);
+        multiSelection.clear();
+        selection = {kind:'object', id:obj.id};
+        tool = 'select';
+      }
+      templateOrigin=null; templateCursor=null;
+      renderAll(); scheduleSave();
+    }
+    if(isPainting && tool==='fill-area' && areaStart && areaEnd){
+      const r0=Math.min(areaStart.r,areaEnd.r), r1=Math.max(areaStart.r,areaEnd.r);
+      const c0=Math.min(areaStart.c,areaEnd.c), c1=Math.max(areaStart.c,areaEnd.c);
+      for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+        if(r>=0&&r<F().rows&&c>=0&&c<F().cols) F().cells.set(r+','+c,{color:currentColor});
+      }
+      areaStart=null; areaEnd=null;
+      renderBoard(); scheduleSave();
+    }
+    if(isPainting && tool==='erase-area' && areaStart && areaEnd){
+      const r0=Math.min(areaStart.r,areaEnd.r), r1=Math.max(areaStart.r,areaEnd.r);
+      const c0=Math.min(areaStart.c,areaEnd.c), c1=Math.max(areaStart.c,areaEnd.c);
+      for(let r=r0;r<=r1;r++) for(let c=c0;c<=c1;c++){
+        if(r>=0&&r<F().rows&&c>=0&&c<F().cols){ const k=r+','+c; F().cells.delete(k); F().fog.delete(k); }
+      }
+      areaStart=null; areaEnd=null;
+      renderBoard(); scheduleSave();
+    }
+    if(isPainting && tool==='vegetation' && areaStart && areaEnd){
+      const r0=Math.min(areaStart.r,areaEnd.r), r1=Math.max(areaStart.r,areaEnd.r);
+      const c0=Math.min(areaStart.c,areaEnd.c), c1=Math.max(areaStart.c,areaEnd.c);
+      // use the real pixel bounds of the selection (hex-aware) instead of raw col*CELL math,
+      // otherwise on a world/hex map the plants land somewhere completely different from the
+      // rectangle the person actually dragged
+      const b = areaPixelBounds(r0,c0,r1,c1);
+      scatterVegetation(b.x0, b.y0, b.x1, b.y1);
+      areaStart=null; areaEnd=null;
+    }
+    if(isPainting){ isPainting=false; scheduleSave(); }
+    if(dragObj){
+      // snap the token/label onto the nearest cell (or, for a multi-square token, the
+      // middle of the whole block it occupies) once the drag ends — templates keep their
+      // freely-dragged position since they're sized/aimed by the player, not grid-bound.
+      const o = findObj(dragObj);
+      const sourceFloor = F();
+      if(o && o.type!=='template' && o.type!=='path'){
+        const c = nearestCellCenter({x:o.x,y:o.y}, o.type==='label' ? 1 : o.size);
+        o.x=c.x; o.y=c.y;
+      }
+      dragObj=null; dragObjStart=null;
+      if(o) offerFloorTravel(o, sourceFloor);
+      renderAll(); scheduleSave();
+    }
+    if(dragGroup){
+      const sourceFloor = F();
+      const moved = [];
+      dragGroup.items.forEach(it=>{
+        const obj = findObj(it.id);
+        if(obj && !obj.locked && obj.type!=='template' && obj.type!=='path'){
+          const c = nearestCellCenter({x:obj.x,y:obj.y}, obj.type==='label' ? 1 : obj.size);
+          obj.x=c.x; obj.y=c.y;
+          moved.push(obj);
+        } else if(obj && !obj.locked && obj.type==='path'){
+          moved.push(obj);
+        }
+      });
+      dragGroup=null;
+      moved.forEach(obj=> offerFloorTravel(obj, sourceFloor));
+      renderAll(); scheduleSave();
+    }
+  });
+
+  // ================= floor tabs =================
+  function renderFloorTabs(){
+    const wrap = document.getElementById('floorTabs');
+    wrap.innerHTML = currentMap.floors.map((f,i)=>`
+      <div class="floor-tab ${i===currentMap.currentFloorIndex?'active':''}" data-idx="${i}">
+        <span data-role="name">${escapeHtml(f.name)}</span>
+        ${currentMap.floors.length>1 ? `<span class="x" data-role="del">✕</span>` : ''}
+      </div>
+    `).join('') + `<div class="floor-tab add" id="addFloorBtn">+ Andar</div>`;
+    wrap.querySelectorAll('.floor-tab[data-idx]').forEach(tab=>{
+      const idx = +tab.dataset.idx;
+      tab.querySelector('[data-role="name"]').addEventListener('click', ()=>{
+        currentMap.currentFloorIndex = idx; selection=null; renderAll();
+      });
+      tab.querySelector('[data-role="name"]').addEventListener('dblclick', ()=>{
+        const name = prompt('Nome do andar:', currentMap.floors[idx].name);
+        if(name && name.trim()){ currentMap.floors[idx].name=name.trim(); renderAll(); scheduleSave(); }
+      });
+      const del = tab.querySelector('[data-role="del"]');
+      if(del) del.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        if(!confirm('Remover este andar?')) return;
+        currentMap.floors.splice(idx,1);
+        if(currentMap.currentFloorIndex>=currentMap.floors.length) currentMap.currentFloorIndex=currentMap.floors.length-1;
+        selection=null; renderAll(); scheduleSave();
+      });
+    });
+    document.getElementById('addFloorBtn').addEventListener('click', ()=>{
+      const name = prompt('Nome do novo andar:', 'Nível '+(currentMap.floors.length+1));
+      if(name===null) return;
+      currentMap.floors.push(makeFloor(name.trim()||('Nível '+(currentMap.floors.length+1)), currentMap.gridType));
+      currentMap.currentFloorIndex = currentMap.floors.length-1;
+      selection=null; renderAll(); scheduleSave();
+    });
+  }
+
+  // ================= size controls =================
+  const rowLimits = ()=> isHex() ? [4,20] : [6,40];
+  const colLimits = ()=> isHex() ? [4,24] : [6,50];
+  document.getElementById('rowsPlus').addEventListener('click', ()=>{ F().rows=Math.min(rowLimits()[1], F().rows+2); renderAll(); scheduleSave(); });
+  document.getElementById('rowsMinus').addEventListener('click', ()=>{ F().rows=Math.max(rowLimits()[0], F().rows-2); renderAll(); scheduleSave(); });
+  document.getElementById('colsPlus').addEventListener('click', ()=>{ F().cols=Math.min(colLimits()[1], F().cols+2); renderAll(); scheduleSave(); });
+  document.getElementById('colsMinus').addEventListener('click', ()=>{ F().cols=Math.max(colLimits()[0], F().cols-2); renderAll(); scheduleSave(); });
+  document.getElementById('zoomIn').addEventListener('click', ()=> setZoom(zoom+0.1));
+  document.getElementById('zoomOut').addEventListener('click', ()=> setZoom(zoom-0.1));
+  function setZoom(z){ zoom=Math.min(2,Math.max(0.4,z)); renderBoard(); }
+
+  // ================= inspector =================
+  function renderInspector(){
+    const el = document.getElementById('inspector');
+    if(multiSelection.size>0){
+      el.innerHTML = `
+        <div class="insp-type">${multiSelection.size} objetos selecionados</div>
+        <label>Cor (aplicar a todos)
+          <input type="color" id="inspBulkColor" value="#eee2c2">
+        </label>
+        <div style="display:flex;gap:6px;margin-bottom:9px;">
+          <button class="util-btn" id="inspBulkLock" style="margin-bottom:0;">Travar todos</button>
+          <button class="util-btn" id="inspBulkUnlock" style="margin-bottom:0;">Destravar todos</button>
+        </div>
+        <button class="util-btn danger" id="inspDelete">Excluir selecionados</button>
+        <p class="muted">Shift+clique num token/rótulo para adicionar ou remover da seleção. Arraste qualquer um deles para mover o grupo inteiro. Clique em área vazia para limpar.</p>
+      `;
+      document.getElementById('inspBulkColor').addEventListener('input', e=>{
+        multiSelection.forEach(id=>{ const o=findObj(id); if(o) o.color=e.target.value; });
+        renderBoard(); scheduleSave();
+      });
+      document.getElementById('inspBulkLock').addEventListener('click', ()=>{
+        multiSelection.forEach(id=>{ const o=findObj(id); if(o) o.locked=true; });
+        renderBoard(); scheduleSave();
+      });
+      document.getElementById('inspBulkUnlock').addEventListener('click', ()=>{
+        multiSelection.forEach(id=>{ const o=findObj(id); if(o) o.locked=false; });
+        renderBoard(); scheduleSave();
+      });
+      document.getElementById('inspDelete').addEventListener('click', removeSelection);
+      return;
+    }
+    if(!selection){ el.innerHTML = '<p class="muted">Nada selecionado. Use "Selecionar" e clique em algo no mapa. Shift+clique em vários tokens/rótulos para selecionar em grupo.</p>'; return; }
+    if(selection.kind==='object'){
+      const o = findObj(selection.id);
+      if(!o){ selection=null; return renderInspector(); }
+      if(o.type==='template'){
+        const dist = Math.hypot(o.tx-o.x, o.ty-o.y);
+        const meters = pxToMeters(dist);
+        const angleDeg = Math.round(Math.atan2(o.ty-o.y, o.tx-o.x) * 180/Math.PI);
+        const hasDirection = o.shape==='cone' || o.shape==='triangle';
+        el.innerHTML = `
+          <div class="insp-type">Forma de Área — ${templateShapeLabel(o.shape)}</div>
+          <label>Cor
+            <input type="color" id="inspTplColor" value="${o.color||'#7fb8a6'}">
+          </label>
+          <label><input type="checkbox" id="inspTplFilled" ${o.filled?'checked':''}> Com preenchimento</label>
+          <label>${o.shape==='circle'?'Raio (m)':(o.shape==='square'?'Lado (m)':(o.shape==='rect'?'Diagonal (m)':'Alcance (m)'))}
+            <input type="text" id="inspTplSize" value="${meters.toFixed(1)}">
+          </label>
+          ${hasDirection ? `<label>Direção (graus, 0° = direita)
+            <input type="text" id="inspTplAngle" value="${angleDeg}">
+          </label>` : ''}
+          <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+          <button class="util-btn danger" id="inspDelete">Excluir</button>
+        `;
+        document.getElementById('inspTplColor').addEventListener('input', e=>{ o.color=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspTplFilled').addEventListener('change', e=>{ o.filled=e.target.checked; renderBoard(); scheduleSave(); });
+        document.getElementById('inspTplSize').addEventListener('change', e=>{
+          let v = parseFloat(e.target.value.replace(',','.'));
+          if(isNaN(v) || v<=0) v = 1.5;
+          const curDist = Math.max(1, Math.hypot(o.tx-o.x, o.ty-o.y));
+          const newDist = metersToPx(v);
+          const factor = newDist/curDist;
+          o.tx = o.x + (o.tx-o.x)*factor;
+          o.ty = o.y + (o.ty-o.y)*factor;
+          renderAll(); scheduleSave();
+        });
+        const angleEl = document.getElementById('inspTplAngle');
+        if(angleEl) angleEl.addEventListener('change', e=>{
+          let deg = parseFloat(e.target.value.replace(',','.'));
+          if(isNaN(deg)) deg = 0;
+          const rad = deg*Math.PI/180;
+          const dist = Math.max(1, Math.hypot(o.tx-o.x, o.ty-o.y));
+          o.tx = o.x + dist*Math.cos(rad);
+          o.ty = o.y + dist*Math.sin(rad);
+          renderAll(); scheduleSave();
+        });
+        document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+        return;
+      }
+      if(o.type==='prop'){
+        const info = PROP_KIND_ICONS[o.kind] || {icon:'❔',label:'Objeto'};
+        el.innerHTML = `
+          <div class="insp-type">${info.icon} ${escapeHtml(info.label)}</div>
+          <label>Nome
+            <input type="text" id="inspPropLabel" value="${escapeHtml(o.label||info.label)}">
+          </label>
+          <label>Imagem própria (opcional)
+            <input type="file" id="inspPropImage" accept="image/*">
+          </label>
+          ${o.image ? `<button class="util-btn" id="inspPropImageRemove">Remover imagem</button>` : ''}
+          <label>Tamanho
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="range" id="inspPropSize" min="0.3" max="4" step="0.1" value="${o.size||1}" style="flex:1;">
+              <input type="text" id="inspPropSizeNum" value="${(o.size||1).toFixed(1)}" style="width:48px;text-align:center;">
+            </div>
+          </label>
+          <label><input type="checkbox" id="inspPropBlocking" ${o.blocking?'checked':''}> Obstáculo (bloqueia tokens)</label>
+          ${(o.kind==='torch'||o.kind==='campfire') ? `
+            <div class="insp-type" style="margin-top:8px;">Iluminação</div>
+            <label><input type="checkbox" id="inspPropLit" ${o.lit!==false?'checked':''}> Acesa (revela névoa ao redor)</label>
+            <label>Cor da luz
+              <input type="color" id="inspPropLightColor" value="${o.lightColor||'#ffb04a'}">
+            </label>
+            <label>Alcance (metros)
+              <input type="text" id="inspPropLightRadius" value="${o.lightRadius!=null?o.lightRadius:(o.kind==='campfire'?6:4)}">
+            </label>
+          ` : ''}
+          ${o.kind==='chest' ? `
+            <label><input type="checkbox" id="inspChestOpen" ${o.open?'checked':''}> Baú aberto</label>
+            <label><input type="checkbox" id="inspChestPlayerLocked" ${o.playerLocked?'checked':''}> Bloqueado para jogadores (só o mestre abre/mexe)</label>
+            <div class="insp-type" style="margin-top:8px;">Itens dentro</div>
+            <p class="muted" style="margin-top:-4px;">Clique na miniatura de um item pra dar uma imagem a ele.</p>
+            <div id="inspChestItems"></div>
+            <div style="display:flex;gap:4px;margin-top:6px;">
+              <input type="text" id="inspChestNewName" placeholder="Nome do item" style="flex:1;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px 7px;font-size:11.5px;">
+              <input type="text" id="inspChestNewQty" placeholder="Qtd" value="1" style="width:40px;text-align:center;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px 3px;font-size:11.5px;">
+              <button class="btn small" id="inspChestAddItem" type="button">+</button>
+            </div>
+          ` : ''}
+          <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+          <button class="util-btn danger" id="inspDelete">Excluir</button>
+        `;
+        document.getElementById('inspPropLabel').addEventListener('input', e=>{ o.label=e.target.value; scheduleSave(); });
+        const sizeEl = document.getElementById('inspPropSize'), sizeNumEl = document.getElementById('inspPropSizeNum');
+        sizeEl.addEventListener('input', e=>{ o.size=parseFloat(e.target.value); sizeNumEl.value=o.size.toFixed(1); renderBoard(); scheduleSave(); });
+        sizeNumEl.addEventListener('input', e=>{ const v=parseFloat(e.target.value); if(!isNaN(v)&&v>0){ o.size=v; sizeEl.value=Math.min(4,Math.max(0.3,v)); renderBoard(); scheduleSave(); } });
+        const imgInput = document.getElementById('inspPropImage');
+        if(imgInput) imgInput.addEventListener('change', async e=>{
+          const file = e.target.files && e.target.files[0];
+          if(!file) return;
+          try{ o.image = await compressImageFile(file, 128); renderAll(); scheduleSave(); }
+          catch(err){ alert('Não foi possível carregar essa imagem.'); }
+        });
+        const imgRemove = document.getElementById('inspPropImageRemove');
+        if(imgRemove) imgRemove.addEventListener('click', ()=>{ o.image=null; renderAll(); scheduleSave(); });
+        document.getElementById('inspPropBlocking').addEventListener('change', e=>{ o.blocking=e.target.checked; renderBoard(); scheduleSave(); });
+        const propLitEl = document.getElementById('inspPropLit');
+        if(propLitEl) propLitEl.addEventListener('change', e=>{ o.lit=e.target.checked; renderAll(); scheduleSave(); });
+        const propLightColorEl = document.getElementById('inspPropLightColor');
+        if(propLightColorEl) propLightColorEl.addEventListener('input', e=>{ o.lightColor=e.target.value; renderBoard(); scheduleSave(); });
+        const propLightRadiusEl = document.getElementById('inspPropLightRadius');
+        if(propLightRadiusEl) propLightRadiusEl.addEventListener('change', e=>{
+          let v = parseFloat(e.target.value.replace(',','.')); if(isNaN(v)||v<0) v=0;
+          o.lightRadius=v; renderAll(); scheduleSave();
+        });
+        const chestOpenEl = document.getElementById('inspChestOpen');
+        if(chestOpenEl) chestOpenEl.addEventListener('change', e=>{ o.open=e.target.checked; renderBoard(); scheduleSave(); });
+        const chestPlayerLockedEl = document.getElementById('inspChestPlayerLocked');
+        if(chestPlayerLockedEl) chestPlayerLockedEl.addEventListener('change', e=>{ o.playerLocked=e.target.checked; renderBoard(); scheduleSave(); });
+        if(o.kind==='chest'){
+          if(!o.items) o.items = [];
+          renderChestItems(o);
+          document.getElementById('inspChestAddItem').addEventListener('click', ()=>{
+            const nameInp = document.getElementById('inspChestNewName');
+            const qtyInp = document.getElementById('inspChestNewQty');
+            const name = nameInp.value.trim();
+            if(!name) return;
+            const qty = Math.max(1, parseInt(qtyInp.value)||1);
+            o.items.push({id:uid(), name, qty, image:null});
+            nameInp.value=''; qtyInp.value='1'; nameInp.focus();
+            renderChestItems(o); scheduleSave();
+          });
+        }
+        document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+        return;
+      }
+      if(o.type==='light'){
+        el.innerHTML = `
+          <div class="insp-type">💡 Objeto Luminoso</div>
+          <label>Nome
+            <input type="text" id="inspLightLabel" value="${escapeHtml(o.label||'Luz')}">
+          </label>
+          <label>Cor da luz
+            <input type="color" id="inspLightColor" value="${o.color||'#f5b84a'}">
+          </label>
+          <label>Alcance (metros) — revela névoa ao redor sozinha
+            <input type="text" id="inspLightRadius" value="${o.radius||0}">
+          </label>
+          <label>Tamanho do ícone
+            <input type="range" id="inspLightSize" min="0.3" max="3" step="0.1" value="${o.size||1}">
+          </label>
+          <label><input type="checkbox" id="inspLightOn" ${o.on!==false?'checked':''}> Acesa (revela névoa)</label>
+          <label><input type="checkbox" id="inspLightHideIcon" ${o.hideIcon?'checked':''}> Ocultar ícone dos jogadores (só o brilho aparece — útil pra um baú brilhante, por exemplo)</label>
+          <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+          <button class="util-btn danger" id="inspDelete">Excluir</button>
+        `;
+        document.getElementById('inspLightLabel').addEventListener('input', e=>{ o.label=e.target.value; scheduleSave(); });
+        document.getElementById('inspLightColor').addEventListener('input', e=>{ o.color=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspLightRadius').addEventListener('change', e=>{
+          let v = parseFloat(e.target.value.replace(',','.')); if(isNaN(v)||v<0) v=0;
+          o.radius=v; renderAll(); scheduleSave();
+        });
+        document.getElementById('inspLightSize').addEventListener('input', e=>{ o.size=parseFloat(e.target.value); renderAll(); scheduleSave(); });
+        document.getElementById('inspLightOn').addEventListener('change', e=>{ o.on=e.target.checked; renderAll(); scheduleSave(); });
+        document.getElementById('inspLightHideIcon').addEventListener('change', e=>{ o.hideIcon=e.target.checked; renderBoard(); scheduleSave(); });
+        document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+        return;
+      }
+      if(o.type==='path'){
+        el.innerHTML = `
+          <div class="insp-type">${o.kind==='river'?'🌊 Rio':'🛣️ Estrada'}</div>
+          <label>Tipo
+            <select id="inspPathKind">
+              <option value="road" ${o.kind!=='river'?'selected':''}>Estrada</option>
+              <option value="river" ${o.kind==='river'?'selected':''}>Rio</option>
+            </select>
+          </label>
+          <label>Cor
+            <input type="color" id="inspPathColor" value="${o.color||'#8a6a45'}">
+          </label>
+          <label>Largura
+            <input type="range" id="inspPathWidth" min="4" max="30" value="${o.width||12}">
+          </label>
+          <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+          <button class="util-btn danger" id="inspDelete">Excluir</button>
+        `;
+        document.getElementById('inspPathKind').addEventListener('change', e=>{ o.kind=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspPathColor').addEventListener('input', e=>{ o.color=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspPathWidth').addEventListener('input', e=>{ o.width=parseInt(e.target.value)||12; renderBoard(); scheduleSave(); });
+        document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+        return;
+      }
+      if(o.type==='connector'){
+        const otherFloors = currentMap.floors.filter(f=>f.id!==F().id);
+        const targetFloor = otherFloors.find(f=>f.id===o.targetFloorId) || null;
+        const landingOptions = targetFloor ? targetFloor.objects.filter(x=>x.type==='connector' && x.id!==o.id) : [];
+        el.innerHTML = `
+          <div class="insp-type">🪜 Escada / Elevador</div>
+          <label>Nome
+            <input type="text" id="inspConnLabel" value="${escapeHtml(o.label||'')}">
+          </label>
+          <label>Cor
+            <input type="color" id="inspConnColor" value="${o.color||'#8a5fb0'}">
+          </label>
+          <label>Vai para o andar
+            <select id="inspConnFloor">
+              <option value="">— escolha um andar —</option>
+              ${otherFloors.map(f=>`<option value="${f.id}" ${f.id===o.targetFloorId?'selected':''}>${escapeHtml(f.name)}</option>`).join('')}
+            </select>
+          </label>
+          ${targetFloor ? `<label>Chega em
+            <select id="inspConnLanding">
+              <option value="">Mesma posição (x,y) no outro andar</option>
+              ${landingOptions.map(c=>`<option value="${c.id}" ${c.id===o.linkedConnectorId?'selected':''}>${escapeHtml(c.label)}</option>`).join('')}
+            </select>
+          </label>` : `<p class="muted">Escolha um andar de destino para ativar esta passagem.</p>`}
+          <p class="muted">Arraste um token para cima dela no mapa para oferecer a viagem.</p>
+          <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+          <button class="util-btn danger" id="inspDelete">Excluir</button>
+        `;
+        document.getElementById('inspConnLabel').addEventListener('input', e=>{ o.label=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspConnColor').addEventListener('input', e=>{ o.color=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspConnFloor').addEventListener('change', e=>{
+          o.targetFloorId = e.target.value || null;
+          o.linkedConnectorId = null; // reset landing choice whenever the target floor changes
+          renderBoard(); renderInspector(); scheduleSave();
+        });
+        const landingEl = document.getElementById('inspConnLanding');
+        if(landingEl) landingEl.addEventListener('change', e=>{ o.linkedConnectorId = e.target.value || null; scheduleSave(); });
+        document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+        return;
+      }
+      const isToken = o.type!=='label';
+      const typeName = o.type==='label' ? 'Rótulo' : (o.type==='token-player' ? 'Token Jogador' : 'Token Monstro/NPC');
+      el.innerHTML = `
+        <div class="insp-type">${typeName}</div>
+        <label>Texto / nome
+          <input type="text" id="inspLabel" value="${escapeHtml(o.label||'')}">
+        </label>
+        <label>Cor ${o.image ? '(borda)' : ''}
+          <input type="color" id="inspColor" value="${o.color||'#eee2c2'}">
+        </label>
+        ${isToken ? `<label>Imagem do token
+          <input type="file" id="inspImage" accept="image/*">
+        </label>
+        ${o.image ? `<button class="util-btn" id="inspImageRemove">Remover imagem</button>` : ''}` : ''}
+        <label>Tamanho <span id="inspSizeMeters" style="color:var(--ink-dim);">${!isHex() ? '(≈ '+((o.size||1)*CELL_METERS).toFixed(1)+' m de lado)' : ''}</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="range" id="inspSizeRange" min="0.3" max="6" step="0.1" value="${o.size||1}" style="flex:1;">
+            <input type="text" id="inspSizeNum" value="${(o.size||1).toFixed(1)}" style="width:48px;text-align:center;">
+          </div>
+        </label>
+        ${isToken ? `<label>Visão / percepção (metros) — revela névoa ao redor ao mover
+          <input type="text" id="inspVision" value="${(o.vision||0)}">
+        </label>
+        <label><input type="checkbox" id="inspShowName" ${o.showName!==false?'checked':''}> Mostrar nome embaixo do token</label>` : ''}
+        ${o.type==='token-player' ? `<label>Dono (nome do jogador — deixe em branco pra deixar livre)
+          <input type="text" id="inspOwner" value="${escapeHtml(o.owner||'')}" placeholder="ex: Marina">
+        </label>` : ''}
+        ${isToken ? `<div class="insp-type" style="margin-top:8px;">Vida</div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="text" id="inspHp" value="${o.hp==null?'':o.hp}" placeholder="atual" style="width:64px;text-align:center;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px;">
+          <span style="color:var(--ink-dim);">/</span>
+          <input type="text" id="inspMaxHp" value="${o.maxHp==null?'':o.maxHp}" placeholder="máx" style="width:64px;text-align:center;background:var(--panel-2);border:1px solid var(--border);color:var(--ink);padding:5px;">
+        </div>
+        <label>Condições (separadas por vírgula)
+          <input type="text" id="inspConditions" value="${escapeHtml(o.conditions||'')}" placeholder="ex: Envenenado, Caído">
+        </label>
+        ${o.type==='token-monster' ? `<label><input type="checkbox" id="inspShowHp" ${o.showHpToPlayers?'checked':''}> Mostrar a barra de vida pros jogadores</label>` : ''}` : ''}
+        <label><input type="checkbox" id="inspLocked" ${o.locked?'checked':''}> Travar posição</label>
+        <button class="util-btn danger" id="inspDelete">Excluir</button>
+      `;
+      document.getElementById('inspLabel').addEventListener('input', e=>{ o.label=e.target.value; renderBoard(); scheduleSave(); });
+      document.getElementById('inspColor').addEventListener('input', e=>{ o.color=e.target.value; renderBoard(); scheduleSave(); });
+      const showNameEl = document.getElementById('inspShowName');
+      if(showNameEl) showNameEl.addEventListener('change', e=>{ o.showName=e.target.checked; renderBoard(); scheduleSave(); });
+      const rangeEl = document.getElementById('inspSizeRange');
+      const numEl = document.getElementById('inspSizeNum');
+      rangeEl.addEventListener('input', e=>{
+        o.size=parseFloat(e.target.value); numEl.value=o.size.toFixed(1);
+        const mEl = document.getElementById('inspSizeMeters');
+        if(mEl && !isHex()) mEl.textContent = '(≈ '+(o.size*CELL_METERS).toFixed(1)+' m de lado)';
+        renderBoard(); scheduleSave();
+      });
+      numEl.addEventListener('change', e=>{
+        let v = parseFloat(e.target.value.replace(',','.'));
+        if(isNaN(v)) v = 1;
+        v = Math.min(10, Math.max(0.1, v));
+        o.size = v; rangeEl.value = Math.min(6,v); numEl.value = v.toFixed(1);
+        renderBoard(); renderInspector(); scheduleSave();
+      });
+      document.getElementById('inspLocked').addEventListener('change', e=>{ o.locked=e.target.checked; scheduleSave(); });
+      document.getElementById('inspDelete').addEventListener('click', removeSelection);
+      const imgInput = document.getElementById('inspImage');
+      if(imgInput){
+        imgInput.addEventListener('change', async e=>{
+          const file = e.target.files[0];
+          if(!file) return;
+          try{
+            o.image = await compressImageFile(file, 160);
+            renderAll(); scheduleSave();
+          }catch(err){
+            alert('Não foi possível carregar essa imagem.');
+          }
+        });
+      }
+      const imgRemove = document.getElementById('inspImageRemove');
+      if(imgRemove) imgRemove.addEventListener('click', ()=>{ o.image=null; renderAll(); scheduleSave(); });
+      const visionEl = document.getElementById('inspVision');
+      if(visionEl) visionEl.addEventListener('change', e=>{
+        let v = parseFloat(e.target.value.replace(',','.'));
+        if(isNaN(v) || v<0) v = 0;
+        o.vision = v;
+        renderAll(); scheduleSave();
+      });
+      const ownerEl = document.getElementById('inspOwner');
+      if(ownerEl) ownerEl.addEventListener('change', e=>{ o.owner=e.target.value.trim(); renderBoard(); scheduleSave(); });
+      const hpEl = document.getElementById('inspHp');
+      if(hpEl) hpEl.addEventListener('change', e=>{
+        const v = parseFloat(e.target.value.replace(',','.'));
+        o.hp = isNaN(v) ? null : v;
+        renderBoard(); scheduleSave();
+      });
+      const maxHpEl = document.getElementById('inspMaxHp');
+      if(maxHpEl) maxHpEl.addEventListener('change', e=>{
+        const v = parseFloat(e.target.value.replace(',','.'));
+        o.maxHp = isNaN(v) ? null : Math.max(1,v);
+        renderBoard(); scheduleSave();
+      });
+      const conditionsEl = document.getElementById('inspConditions');
+      if(conditionsEl) conditionsEl.addEventListener('change', e=>{ o.conditions=e.target.value; renderBoard(); scheduleSave(); });
+      const showHpEl = document.getElementById('inspShowHp');
+      if(showHpEl) showHpEl.addEventListener('change', e=>{ o.showHpToPlayers=e.target.checked; renderBoard(); scheduleSave(); });
+    } else if(selection.kind==='cell'){
+      const cell = F().cells.get(selection.key);
+      el.innerHTML = `
+        <div class="insp-type">${isHex()?'Hexágono':'Célula'}</div>
+        ${cell ? `<label>Cor desta célula
+          <input type="color" id="inspCellColor" value="${cell.color}">
+        </label>` : `<p class="muted">Célula vazia (sem terreno).</p>`}
+        <button class="util-btn danger" id="inspDelete">Apagar terreno</button>
+      `;
+      const cc = document.getElementById('inspCellColor');
+      if(cc) cc.addEventListener('input', e=>{ cell.color=e.target.value; renderBoard(); scheduleSave(); });
+      document.getElementById('inspDelete').addEventListener('click', removeSelection);
+    } else if(selection.kind==='edge'){
+      const w = F().walls.get(selection.key);
+      const defColor = w && w.kind==='wall' ? '#17110a' : '#c9932f';
+      const blocking = !w || w.blocking!==false;
+      el.innerHTML = `
+        <div class="insp-type">${w ? (w.kind==='wall'?'Parede':'Porta') : 'Borda vazia'}</div>
+        ${w ? `<label>Cor
+          <input type="color" id="inspEdgeColor" value="${w.color||defColor}">
+        </label>
+        <label><input type="checkbox" id="inspEdgeBlocking" ${blocking?'checked':''}> Física (bloqueia tokens)</label>
+        <p class="muted" style="margin-top:-4px;">${blocking ? 'Tokens não conseguem atravessar.' : 'Tokens passam livremente — só a aparência continua aqui.'}</p>
+        <button class="util-btn danger" id="inspDelete">Remover</button>` : `<p class="muted">Nada aqui ainda.</p>`}
+      `;
+      if(w){
+        document.getElementById('inspEdgeColor').addEventListener('input', e=>{ w.color=e.target.value; renderBoard(); scheduleSave(); });
+        document.getElementById('inspEdgeBlocking').addEventListener('change', e=>{ w.blocking=e.target.checked; renderInspector(); scheduleSave(); });
+        document.getElementById('inspDelete').addEventListener('click', removeSelection);
+      }
+    }
+  }
+
+  // ================= legend =================
+  function renderLegend(){
+    const el = document.getElementById('legendBody');
+    let html = '';
+    if(!isHex()){
+      html += `<div class="legend-row"><span class="legend-line" style="border-color:#17110a"></span> Parede</div>`;
+      html += `<div class="legend-row"><span class="legend-line" style="border-color:#c9932f"></span> Porta</div>`;
+    }
+    html += `<div class="legend-row"><span class="swatch" style="background:#3f6a9c;border-radius:50%;"></span> Token jogador</div>`;
+    html += `<div class="legend-row"><span class="swatch" style="background:#8a2f22;transform:rotate(45deg);"></span> Token monstro/NPC</div>`;
+    html += `<div class="legend-row"><span class="swatch" style="background:#0a0705;"></span> Névoa de guerra</div>`;
+    el.innerHTML = html;
+  }
+
+  // ================= notes =================
+  const notesArea = document.getElementById('notesArea');
+  notesArea.addEventListener('input', e=>{ F().notes = e.target.value; scheduleSave(); });
+
+  // ================= tool info =================
+  function renderToolInfo(){
+    document.getElementById('toolInfo').innerHTML = `<b>${toolDisplayName(tool)}</b><br>${TOOL_INFO[tool]||''}`;
+    document.querySelectorAll('.tool-btn[data-tool]').forEach(b=> b.classList.toggle('active', b.dataset.tool===tool));
+    syncSwatchActive();
+    const edgeRow = document.getElementById('edgeColorRow');
+    if(tool==='wall' || tool==='door'){
+      edgeRow.style.display = 'flex';
+      document.getElementById('edgeColorPicker').value = tool==='wall' ? currentWallColor : currentDoorColor;
+      document.getElementById('edgeColorLabel').textContent = tool==='wall' ? 'cor da parede' : 'cor da porta';
+    } else {
+      edgeRow.style.display = 'none';
+    }
+    renderTemplateOptions();
+    renderPropOptions();
+    renderVegOptions();
+    renderPathOptions();
+    document.getElementById('content').classList.toggle('edge-hover-active', ['wall','door','select','erase'].includes(tool));
+  }
+  function toolDisplayName(t){
+    const names = {floor:'Terreno', erase:'Apagar', 'fill-area':'Preencher Área', 'erase-area':'Apagar Área', wall:'Parede', door:'Porta', 'fog-on':'Ocultar área', 'fog-off':'Revelar área', 'token-player':'Token Jogador', 'token-monster':'Token Monstro', connector:'Escada/Elevador', prop:'Objeto de Cenário', light:'Objeto Luminoso', vegetation:'Pincel de Vegetação', path:'Estrada/Rio', label:'Rótulo', select:'Selecionar / Mover', ruler:'Régua', template:'Forma de Área', ping:'Apontar'};
+    return names[t]||t;
+  }
+
+  // ================= example content =================
+  function loadExample(){
+    const f = F();
+    if(isHex()){
+      const spots = [
+        [1,1,'#4a6b3a'],[1,2,'#4a6b3a'],[2,1,'#2c4527'],[2,2,'#2c4527'],[2,3,'#2c4527'],
+        [3,2,'#2c5670'],[3,3,'#2c5670'],[3,4,'#2c5670'],[4,3,'#b09b62'],[1,3,'#4a6b3a']
+      ];
+      spots.forEach(([r,c,col])=> f.cells.set(r+','+c,{color:col}));
+      const {x,y} = hexCenter(3,3);
+      f.objects.push({id:uid(), type:'label', x, y:y-30, label:'Rio Correntoso', color:'#eee2c2', size:1, locked:false});
+    } else {
+      const room1 = [[3,3],[3,4],[4,3],[4,4]];
+      const corridor = [[4,5],[4,6],[4,7]];
+      const room2 = [[3,8],[3,9],[4,8],[4,9],[5,8],[5,9]];
+      [...room1,...corridor,...room2].forEach(([r,c])=> f.cells.set(r+','+c,{color:'#5c5850'}));
+      f.walls.set('H:3:3',{kind:'wall'}); f.walls.set('H:3:4',{kind:'wall'});
+      f.walls.set('V:4:8',{kind:'door'});
+      f.objects.push({id:uid(), type:'token-player', x:4*CELL+CELL/2, y:4*CELL+CELL/2, color:'#3f6a9c', label:'Herói', size:1, locked:false, vision:9, image:null});
+      f.objects.push({id:uid(), type:'token-monster', x:3*CELL+CELL/2, y:9*CELL+CELL/2, color:'#8a2f22', label:'Goblin', size:1, locked:false, vision:0, image:null});
+      f.objects.push({id:uid(), type:'label', x:4*CELL+CELL/2, y:6*CELL, label:'Corredor', color:'#eee2c2', size:1, locked:false});
+    }
+  }
+  document.getElementById('btnExample').addEventListener('click', ()=>{
+    if(F().cells.size && !confirm('Isso substitui o andar atual pelo exemplo. Continuar?')) return;
+    const name = F().name;
+    currentMap.floors[currentMap.currentFloorIndex] = makeFloor(name, currentMap.gridType);
+    loadExample();
+    selection=null; renderAll(); scheduleSave();
+  });
+  document.getElementById('btnClearFloor').addEventListener('click', ()=>{
+    if(!confirm('Limpar todo o andar atual?')) return;
+    const name = F().name;
+    currentMap.floors[currentMap.currentFloorIndex] = makeFloor(name, currentMap.gridType);
+    selection=null; renderAll(); scheduleSave();
+  });
+  document.getElementById('btnFogAll').addEventListener('click', ()=>{
+    if(!confirm('Cobrir o andar inteiro com névoa de guerra?')) return;
+    fogFillAll();
+  });
+  document.getElementById('btnFogNone').addEventListener('click', ()=>{
+    if(F().fog.size && !confirm('Revelar todo o andar (remover toda a névoa)?')) return;
+    fogClearAll();
+  });
+
+  // ================= master render =================
+  function renderAll(){
+    renderFloorTabs();
+    renderBoard();
+    renderInspector();
+    renderToolInfo();
+    notesArea.value = F().notes || '';
+    renderDiceLog();
+    refreshDiceRollerOptions();
+    renderInitTray();
+  }
+
+  // ================= dice tray =================
+  const DICE_TYPES = [4,6,8,10,12,20,100];
+  const diceQty = Object.fromEntries(DICE_TYPES.map(n=>[n,0]));
+  function buildDiceGrid(){
+    const grid = document.getElementById('diceGrid');
+    grid.innerHTML = DICE_TYPES.map(n=>`
+      <div class="dice-die">
+        <div class="die-name">d${n}</div>
+        <input type="number" min="0" max="999" value="0" data-die="${n}">
+      </div>
+    `).join('');
+    grid.querySelectorAll('input[data-die]').forEach(inp=>{
+      inp.addEventListener('input', e=>{
+        const v = Math.max(0, Math.min(999, parseInt(e.target.value)||0));
+        diceQty[e.target.dataset.die] = v;
+      });
+    });
+  }
+  // Lets you roll "as" one of the player tokens on the map instead of just your author
+  // name — so the log reads "Erindor rolou 1d20" instead of your own name every time.
+  function refreshDiceRollerOptions(){
+    const sel = document.getElementById('diceRoller');
+    if(!sel || !currentMap) return;
+    const prev = sel.value;
+    const tokenNames = [];
+    currentMap.floors.forEach(f=> f.objects.forEach(o=>{
+      if(o.type==='token-player' && o.label && !tokenNames.includes(o.label)) tokenNames.push(o.label);
+    }));
+    sel.innerHTML = `<option value="">Você (${escapeHtml(authorName||'Anônimo')})</option>` +
+      tokenNames.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    if(tokenNames.includes(prev)) sel.value = prev;
+  }
+  function rollDie(sides){ return Math.floor(Math.random()*sides)+1; }
+  function rollDice(){
+    if(!currentMap) return;
+    const bonus = Math.round(parseFloat(document.getElementById('diceBonus').value.replace(',','.'))||0);
+    const parts = []; // {sides, rolls}
+    let total = bonus;
+    DICE_TYPES.forEach(sides=>{
+      const qty = diceQty[sides]||0;
+      if(qty<=0) return;
+      const rolls = Array.from({length:qty}, ()=>rollDie(sides));
+      total += rolls.reduce((a,b)=>a+b,0);
+      parts.push({sides, rolls});
+    });
+    if(!parts.length && bonus===0){ return; } // nothing set to roll
+    const formula = parts.map(p=>`${p.rolls.length}d${p.sides}`).join(' + ') + (bonus ? ` ${bonus>=0?'+':'-'} ${Math.abs(bonus)}` : '');
+    const rollerSel = document.getElementById('diceRoller');
+    const roller = (rollerSel && rollerSel.value) ? rollerSel.value : (authorName || 'Anônimo');
+    const entry = {id:uid(), author: roller, formula: formula || String(bonus), parts, bonus, total, ts: Date.now()};
+    currentMap.diceLog.push(entry);
+    if(currentMap.diceLog.length>25) currentMap.diceLog = currentMap.diceLog.slice(-25);
+    renderDiceLog();
+    scheduleSave();
+  }
+  // A roll at a die's maximum face (natural 20 on a d20, etc.) shows green like a critical
+  // hit; a roll of 1 shows red like a fumble. Only meaningful for individual die faces —
+  // never applied to the bonus or the combined total.
+  function formatRollValue(v, sides){
+    if(sides>1 && v===sides) return `<span class="roll-crit">${v}</span>`;
+    if(sides>1 && v===1) return `<span class="roll-fumble">${v}</span>`;
+    return String(v);
+  }
+  function renderDiceLog(){
+    const el = document.getElementById('diceLog');
+    if(!el || !currentMap) return;
+    if(!currentMap.diceLog.length){ el.innerHTML = '<div class="dice-log-empty">Nenhuma rolagem ainda.</div>'; return; }
+    el.innerHTML = [...currentMap.diceLog].reverse().map(e=>{
+      const parts = e.parts || [];
+      const breakdown = parts.map(p=>`d${p.sides}: [${p.rolls.map(v=>formatRollValue(v,p.sides)).join(', ')}]`).join('  ');
+      return `
+      <div class="dice-log-entry">
+        <span class="roll-who">${escapeXml(e.author)}</span> rolou ${escapeXml(e.formula)} —
+        <span class="roll-total">${e.total}</span>
+        ${breakdown ? `<div style="opacity:.85;">${breakdown}</div>` : ''}
+      </div>`;
+    }).join('');
+  }
+  buildDiceGrid();
+  buildKindGrid('propKindGrid', PROP_TOOL_KINDS, 'propkind', k=>{ currentPropKind=k; });
+  buildKindGrid('vegKindGrid', VEG_TOOL_KINDS, 'vegkind', k=>{ currentVegKind=k; });
+  document.querySelectorAll('#pathOptions [data-pathkind]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      pathKind = b.dataset.pathkind;
+      pathColor = pathKind==='river' ? '#3f7ab0' : '#8a6a45';
+      renderToolInfo();
+    });
+  });
+  document.getElementById('pathColorPicker').addEventListener('input', e=>{ pathColor=e.target.value; });
+  document.getElementById('pathWidth').addEventListener('input', e=>{ pathWidth=parseInt(e.target.value)||12; });
+  document.getElementById('btnPathFinish').addEventListener('click', finishPath);
+  window.addEventListener('keydown', e=>{
+    if(e.key==='Escape' && isDrawingPath){ cancelPath(); renderToolInfo(); }
+  });
+  document.getElementById('btnDiceToggle').addEventListener('click', ()=>{
+    document.getElementById('diceTray').classList.toggle('active');
+    refreshDiceRollerOptions();
+  });
+  document.getElementById('btnDiceRoll').addEventListener('click', rollDice);
+  document.getElementById('btnDiceClear').addEventListener('click', ()=>{
+    DICE_TYPES.forEach(n=>{ diceQty[n]=0; });
+    document.querySelectorAll('#diceGrid input[data-die]').forEach(inp=> inp.value=0);
+    document.getElementById('diceBonus').value = '0';
+  });
+
+  // ================= initiative tracker =================
+  function renderInitTray(){
+    const init = currentMap.initiative;
+    document.getElementById('initRoundNum').textContent = init.round;
+    const list = document.getElementById('initList');
+    if(!init.entries.length){ list.innerHTML = '<p class="muted" style="margin:2px 0;">Ninguém na lista ainda.</p>'; return; }
+    const sorted = init.entries.map((e,i)=>({...e, origIdx:i})).sort((a,b)=>b.value-a.value);
+    list.innerHTML = sorted.map(e => `
+      <div class="init-row ${e.origIdx===init.currentIndex?'current-turn':''}">
+        <span class="init-val">${e.value}</span>
+        <span class="init-name">${escapeHtml(e.name)}</span>
+        <button class="coach-skip" data-init-remove="${e.origIdx}" style="padding:2px 5px;">✕</button>
+      </div>
+    `).join('');
+    list.querySelectorAll('[data-init-remove]').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        const idx = parseInt(b.dataset.initRemove);
+        init.entries.splice(idx,1);
+        if(init.currentIndex>=init.entries.length) init.currentIndex = init.entries.length-1;
+        renderInitTray(); scheduleSave();
+      });
+    });
+  }
+  document.getElementById('btnInitToggle').addEventListener('click', ()=>{
+    document.getElementById('initTray').classList.toggle('active');
+    renderInitTray();
+  });
+  document.getElementById('btnInitAdd').addEventListener('click', ()=>{
+    const nameInp = document.getElementById('initNewName');
+    const valInp = document.getElementById('initNewValue');
+    const name = nameInp.value.trim();
+    const value = parseFloat(valInp.value.replace(',','.'));
+    if(!name || isNaN(value)) return;
+    currentMap.initiative.entries.push({name, value});
+    nameInp.value=''; valInp.value='';
+    renderInitTray(); scheduleSave();
+  });
+  document.getElementById('btnInitNext').addEventListener('click', ()=>{
+    const init = currentMap.initiative;
+    if(!init.entries.length) return;
+    const sorted = init.entries.map((e,i)=>i).sort((a,b)=>init.entries[b].value-init.entries[a].value);
+    const curPos = sorted.indexOf(init.currentIndex);
+    const nextPos = curPos<0 ? 0 : (curPos+1) % sorted.length;
+    if(nextPos===0 && curPos>=0) init.round++;
+    init.currentIndex = sorted[nextPos];
+    renderInitTray(); scheduleSave();
+  });
+  document.getElementById('btnInitClear').addEventListener('click', ()=>{
+    if(!confirm('Zerar a lista de iniciativa?')) return;
+    currentMap.initiative = {round:1, currentIndex:-1, entries:[]};
+    renderInitTray(); scheduleSave();
+  });
+
+  // ================= guided tutorial =================
+  const TUTORIAL_STEPS = [
+    { title:'Bem-vindo ao Lumenic ✦', text:'Vamos fazer um tour rápido pelas ferramentas antes de você começar a desenhar. São só alguns passos — pode pular a qualquer momento.', selector:null },
+    { title:'Terreno', text:'Escolha um tipo de terreno aqui e depois clique ou arraste no mapa para pintar as células. Você também pode escolher uma cor personalizada.', selector:'#terrainSwatches' },
+    { title:'Preencher / Apagar Área', text:'Para pintar uma sala inteira de uma vez em vez de célula por célula, use "Preencher Área" e arraste um retângulo no mapa. "Apagar Área" faz o mesmo, só que limpando o terreno e a névoa daquele retângulo de uma vez.', selector:'[data-tool="fill-area"]' },
+    { title:'Paredes e Portas', text:'Parede e porta ficam na borda entre duas células, não dentro delas — clique bem na linha da grade (ela acende ao passar o mouse). Elas bloqueiam a visão automaticamente, e cada uma pode ter sua própria cor. No inspetor dá pra desligar "Física" se quiser que os tokens atravessem mesmo assim.', selector:'#structureGroup' },
+    { title:'Névoa de Guerra', text:'Cubra o mapa com névoa para esconder áreas que os jogadores ainda não exploraram. "Cobrir andar inteiro" e "Revelar andar inteiro" ajudam a começar rápido.', selector:'[data-tool="fog-on"]' },
+    { title:'Tokens', text:'Adicione tokens de jogador ou monstro/NPC. Dê um "raio de visão" ao token de jogador (no painel à direita, depois de selecioná-lo) para a névoa próxima a ele sumir sozinha conforme ele se move — e voltar quando ele se afastar.', selector:'[data-tool="token-player"]' },
+    { title:'Escada / Elevador', text:'Ligue andares diferentes: coloque uma escada, escolha o andar de destino no inspetor e, quando um token for arrastado até ela, o jogo pergunta se quer levá-lo para lá.', selector:'[data-tool="connector"]' },
+    { title:'Objetos de Cenário', text:'Baús, barris, caixotes, estátuas e mais — escolha o ícone e clique no mapa. Marque "Obstáculo" no inspetor pra ele bloquear tokens de verdade. O Objeto Luminoso funciona como uma tocha: revela a névoa ao redor sozinho, sem precisar de um token.', selector:'[data-tool="prop"]' },
+    { title:'Mundo e Região', text:'O Pincel de Vegetação espalha árvores, arbustos e mato de forma orgânica quando você arrasta uma área. Estrada/Rio deixa você desenhar um caminho clicando vários pontos — clique duas vezes (ou use o botão) pra terminar.', selector:'[data-tool="vegetation"]' },
+    { title:'Formas de Área (magias)', text:'Círculo, cone, retângulo, quadrado ou triângulo — ótimo para visualizar o alcance de uma magia antes de conjurar. Escolha preenchido ou só contorno.', selector:'[data-tool="template"]' },
+    { title:'Selecionar / Mover', text:'Clique em qualquer coisa no mapa para selecionar, mover ou editar pelo painel à direita. Segure Shift e clique para selecionar vários tokens de uma vez e movê-los juntos.', selector:'[data-tool="select"]' },
+    { title:'Modo Jogador', text:'Alterne para "Jogador" a qualquer momento para ver exatamente o que seus jogadores enxergam, com a névoa e a visão dos tokens aplicadas de verdade.', selector:'#modePlayer' },
+    { title:'Andares', text:'Um mapa pode ter vários andares (ex: térreo e porão de uma masmorra). Adicione, troque e renomeie andares por aqui.', selector:'#floorTabs' },
+    { title:'Senha e Multiplayer', text:'O cadeado 🔓 ao lado do "?" protege o mapa com senha. E o mapa sincroniza sozinho: se outra pessoa mexer nele, você vê a mudança aparecer aqui em poucos segundos, sem precisar recarregar a página.', selector:'#btnPassword' },
+    { title:'Dados', text:'O botão de dado no canto da tela abre a bandeja: escolha a quantidade de cada tipo (d4 a d100), some um bônus, e role. Todo mundo que está no mapa vê o resultado no histórico.', selector:'#btnDiceToggle' },
+    { title:'Pronto!', text:'Isso é o básico. Pode reabrir esse tutorial quando quiser clicando no botão "?" ao lado do nome do mapa.', selector:null }
+  ];
+  let coachIndex = 0;
+  async function tutorialDismissed(){
+    try{ const r = await store.get('dm-tutorial-dismissed', false); return !!(r && r.value==='1'); }catch(e){ return false; }
+  }
+  async function setTutorialDismissed(v){
+    try{ await store.set('dm-tutorial-dismissed', v ? '1' : '0', false); }catch(e){}
+  }
+  function startTutorial(){
+    coachIndex = 0;
+    document.getElementById('coachOverlay').classList.add('active');
+    document.getElementById('coachDontShow').checked = false;
+    showCoachStep(0);
+  }
+  function endTutorial(){
+    if(document.getElementById('coachDontShow').checked) setTutorialDismissed(true);
+    document.getElementById('coachOverlay').classList.remove('active');
+    document.getElementById('coachSpot').style.display = 'none';
+  }
+  function showCoachStep(i){
+    coachIndex = Math.max(0, Math.min(TUTORIAL_STEPS.length-1, i));
+    const step = TUTORIAL_STEPS[coachIndex];
+    // skip a step whose target is hidden right now (e.g. the wall/door group doesn't
+    // exist on a hex-grid map) — just move on instead of showing a broken spotlight
+    if(step.selector){
+      const el = document.querySelector(step.selector);
+      const hidden = !el || el.offsetParent===null;
+      if(hidden){
+        if(coachIndex < TUTORIAL_STEPS.length-1){ showCoachStep(coachIndex+1); return; }
+        else { endTutorial(); return; }
+      }
+    }
+    document.getElementById('coachStepCount').textContent = (coachIndex+1)+' / '+TUTORIAL_STEPS.length;
+    document.getElementById('coachTitle').textContent = step.title;
+    document.getElementById('coachText').textContent = step.text;
+    document.getElementById('coachPrev').style.visibility = coachIndex===0 ? 'hidden' : 'visible';
+    document.getElementById('coachNext').textContent = coachIndex===TUTORIAL_STEPS.length-1 ? 'Concluir' : 'Próximo ›';
+    const target = step.selector ? document.querySelector(step.selector) : null;
+    if(target){
+      // the sidebar can be taller than the viewport, so the target for a later step may
+      // currently be scrolled out of view — bring it on-screen first (instant, not smooth,
+      // so the very next read of its position is already accurate), *then* position the
+      // card. This is what was leaving people stuck looking at an empty screen before.
+      target.scrollIntoView({block:'center', inline:'nearest'});
+    }
+    positionCoach(step.selector);
+  }
+  function positionCoach(selector){
+    const spot = document.getElementById('coachSpot');
+    const card = document.getElementById('coachCard');
+    card.classList.remove('arrow-top','arrow-bottom','arrow-left','arrow-right');
+    const target = selector ? document.querySelector(selector) : null;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const cardW = 280, cardH = card.offsetHeight || 190;
+    if(!target){
+      spot.style.display = 'none';
+      card.style.left = Math.max(8,(vw/2-cardW/2))+'px';
+      card.style.top = Math.max(8,(vh/2-cardH/2))+'px';
+      return;
+    }
+    const r = target.getBoundingClientRect();
+    spot.style.display = 'block';
+    spot.style.left = (r.left-6)+'px';
+    spot.style.top = (r.top-6)+'px';
+    spot.style.width = (r.width+12)+'px';
+    spot.style.height = (r.height+12)+'px';
+    // prefer placing the card to the right of the target (this is a left-hand tool panel);
+    // fall back to below/above if there isn't enough room
+    let left, top, arrow;
+    if(r.right + 16 + cardW < vw){
+      left = r.right + 16; top = r.top; arrow='arrow-left';
+    } else if(r.bottom + 16 + cardH < vh){
+      left = r.left; top = r.bottom + 16; arrow='arrow-top';
+    } else if(r.top - 16 - cardH > 0){
+      left = r.left; top = r.top - 16 - cardH; arrow='arrow-bottom';
+    } else {
+      left = vw-cardW-20; top = r.top; arrow='arrow-left';
+    }
+    // final safety net: no matter what the branch above computed, the card must always
+    // land fully inside the viewport — this is what actually guarantees it's never
+    // possible to get "stuck" unable to see the Próximo/Pular buttons.
+    left = Math.max(8, Math.min(vw-cardW-8, left));
+    top = Math.max(8, Math.min(vh-cardH-8, top));
+    card.style.left = left+'px'; card.style.top = top+'px';
+    card.classList.add(arrow);
+  }
+  document.getElementById('coachNext').addEventListener('click', ()=>{
+    if(coachIndex >= TUTORIAL_STEPS.length-1) endTutorial();
+    else showCoachStep(coachIndex+1);
+  });
+  document.getElementById('coachPrev').addEventListener('click', ()=> showCoachStep(coachIndex-1));
+  document.getElementById('coachSkip').addEventListener('click', endTutorial);
+  document.getElementById('btnHelp').addEventListener('click', startTutorial);
+  function updatePasswordButtonUI(){
+    const btn = document.getElementById('btnPassword');
+    if(!btn || !currentMap) return;
+    const has = !!currentMap.passwordHash;
+    btn.textContent = has ? '🔒' : '🔓';
+    btn.title = has ? 'Mapa protegido por senha — clique para trocar ou remover' : 'Proteger este mapa com senha';
+  }
+  document.getElementById('btnPassword').addEventListener('click', async ()=>{
+    const hasPw = !!currentMap.passwordHash;
+    const val = await askModal(
+      hasPw ? 'Alterar senha do mapa' : 'Proteger mapa com senha',
+      hasPw
+        ? 'Digite uma nova senha para trocar a atual, ou use "Remover senha" para tirar a proteção.'
+        : 'Isso não é segurança de verdade — é só uma trava simples contra acesso casual/por engano. Guarde bem a senha: sem ela ninguém abre o mapa, nem você.',
+      {confirmLabel: hasPw ? 'Salvar' : 'Definir senha', showRemove: hasPw}
+    );
+    if(val===null) return;
+    if(val===MODAL_REMOVE){
+      currentMap.passwordHash = null;
+      updatePasswordButtonUI();
+      scheduleSave();
+      return;
+    }
+    const trimmed = val.trim();
+    if(!trimmed) return; // empty confirm with no explicit remove action — do nothing, avoid accidental wipe
+    currentMap.passwordHash = simpleHash(trimmed);
+    updatePasswordButtonUI();
+    scheduleSave();
+  });
+  function updateVisibilityButtonUI(){
+    const btn = document.getElementById('btnVisibility');
+    if(!btn || !currentMap) return;
+    const isPrivate = currentMap.visibility==='private';
+    btn.textContent = isPrivate ? '🙈 Privado' : '🌐 Público';
+    btn.title = isPrivate
+      ? 'Mapa privado — some da lista pública, só abre por link direto. Clique para tornar público.'
+      : 'Mapa público — aparece na lista pra qualquer um que abrir esta ferramenta. Clique para tornar privado.';
+  }
+  document.getElementById('btnVisibility').addEventListener('click', ()=>{
+    currentMap.visibility = currentMap.visibility==='private' ? 'public' : 'private';
+    updateVisibilityButtonUI();
+    scheduleSave();
+  });
+  document.getElementById('btnInvite').addEventListener('click', async ()=>{
+    const link = location.origin + location.pathname + '?mapa=' + encodeURIComponent(currentMap.id);
+    let copied = false;
+    try{ await navigator.clipboard.writeText(link); copied = true; }catch(e){}
+    if(currentMap.visibility==='private'){
+      alert((copied ? 'Link copiado!\n\n' : '') + link + '\n\nEsse mapa é privado — só quem abrir por este link exato consegue vê-lo. Se você abrir esta ferramenta em outro lugar (não pelo link do artefato/site compartilhado), quem receber o arquivo por fora não vai ver os mesmos mapas.');
+    } else {
+      alert((copied ? 'Link copiado!\n\n' : '') + link);
+    }
+  });
+  window.addEventListener('resize', ()=>{
+    if(document.getElementById('coachOverlay').classList.contains('active')) positionCoach(TUTORIAL_STEPS[coachIndex].selector);
+  });
+
+  // ================= boot =================
+  (async ()=>{
+    authorName = await loadAuthorName();
+    document.getElementById('authorInput').value = authorName;
+    mapsIndex = await loadIndex();
+    const directId = new URLSearchParams(location.search).get('mapa');
+    if(directId){ await openMap(directId); if(screen==='editor') return; }
+    showGallery();
+  })();
+})();
+</script>
+</body>
+</html>
